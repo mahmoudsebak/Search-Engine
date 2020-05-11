@@ -1,80 +1,136 @@
+import java.io.BufferedReader;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
-import org.jsoup.*;
+
+import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
-
 public class WebCrawler {
-    private static final int MAX_PAGES = 5000;
-    private Set<String> pagesVisited = new HashSet<String>();
-    private List<String> pagesToVisit = new LinkedList<String>();
-    private static final String USER_AGENT =
-            "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.1 (KHTML, like Gecko) Chrome/13.0.782.112 Safari/535.1";
-    
-    public String getNextPage()
-    {
-    	String nextPage;
-    	do
-    	{
-    		nextPage = pagesToVisit.remove(0);
-    	}while(this.pagesVisited.contains(nextPage));
-    	this.pagesVisited.add(nextPage);
-    	return nextPage;
-    }
-    public List<String> getPageLinks(String url)
-    {
-		try 
-		{
-	        Connection connection = Jsoup.connect(url).userAgent(USER_AGENT);
-	        Document htmlDocument =  connection.get();
-
-            if(connection.response().statusCode() == 200)
-			{
-            	System.out.println("\nVisiting web page: " + url);
-			}
-			if(!connection.response().contentType().contains("text/html"))
-			{
-				System.out.println("\nFalied to visit web page");
-			}
-            Elements pageLinks = htmlDocument.select("a[href]");
-            System.out.println("Found " + pageLinks.size() + " links");
-            List<String> links = new LinkedList<String>();
-            for(Element link : pageLinks)
-            {
-            	links.add(link.absUrl("href"));
-            }
-            return links;
-		} 
-		catch (IOException e) 
-		{
-			e.printStackTrace();
-			return null;
-		}    	
-    }
-    public List<String> crawl(List<String> seedPages)
-    {
-    	this.pagesToVisit = seedPages;
-        while(this.pagesVisited.size() < MAX_PAGES)
-        {
-            String currentUrl =  this.getNextPage();
-            this.pagesToVisit.addAll(this.getPageLinks(currentUrl));
-        }
-        return this.pagesToVisit;
-    }
-    public static void main(String[] args)
-    {
-    	List<String> seedPages = new LinkedList<String>();
-    	seedPages.add("https://www.nzfootball.co.nz/");
-    	seedPages.add("https://en.wikipedia.org/wiki/Association_football_in_New_Zealand");
-    	WebCrawler crawler = new WebCrawler();
-    	List<String> webPages = crawler.crawl(seedPages);
-    	
-    	for(String page : webPages)
-    	{
-    		System.out.println(page);
-    	}
-    	
-    }
-    
+	public static void main(String[] args) throws InterruptedException
+	{
+    	Set<String> seedPages  = new HashSet<String>();
+		seedPages.add("https://www.google.com/");
+		seedPages.add("https://www.youtube.com/");
+    	seedPages.add("https://www.geeksforgeeks.org/");
+    	Crawler crawler = new Crawler(seedPages);
+		int ThreadNo = Integer.parseInt(args[0]);
+		System.out.println(ThreadNo);
+		crawler.crawl();
+		Thread [] t = new Thread [ThreadNo]; 
+		for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
+		long start = System.currentTimeMillis();
+		for(int i = 0; i < ThreadNo; i++) t[i].start();
+		for(int i = 0; i < ThreadNo; i++) t[i].join();
+		long time = System.currentTimeMillis() - start;
+		System.out.printf("Time taken = " + time + " ms\n\n");
+    	crawler.writeToFile("webPages.txt");
+    	System.out.println("\n**Done** Visited " + crawler.getPagesVisitedLength() + " web page(s)");
+	}
 }
+
+class CrawlerRunnable implements Runnable {
+	private Crawler crawler;
+
+	public CrawlerRunnable (Crawler crawler) {
+		this.crawler = crawler;
+	}
+
+	public void run () {
+		boolean finish = false;
+		while(!finish) {
+			finish = crawler.crawl();
+		}
+	}
+}
+
+class Crawler {
+    private static final int MAX_PAGES = 100;
+    private HashSet<String> pagesVisited;
+    private Queue<String> pagesToVisit;
+    
+    public Crawler(Set<String>seedPages)
+    {
+    	this.pagesVisited = new HashSet<String>();
+        this.pagesToVisit = new LinkedList<String>();
+    	for(String page : seedPages)
+    	{
+    		this.pagesToVisit.add(page);
+    	}
+    }
+    
+    public int getPagesVisitedLength()
+    {
+    	return this.pagesVisited.size();
+    }
+    
+    private synchronized String getNextPage()
+    {
+        String nextPage;
+        do
+        {
+            nextPage = this.pagesToVisit.poll();
+        } while(this.pagesVisited.contains(nextPage));    
+        return nextPage;
+        
+    }
+    
+    public boolean crawl()
+     {
+    	synchronized(pagesVisited)
+    	{
+    		if(this.pagesVisited.size() == MAX_PAGES) return true;
+            String currentUrl = this.getNextPage();
+            this.pagesVisited.add(currentUrl);
+            if(currentUrl == null) return false;
+            this.getLinks(currentUrl);
+            return false;
+            
+    	}
+    }
+    
+    public synchronized void getLinks(String url)
+    {
+    	Document htmlPage = null;
+		try {
+			htmlPage = Jsoup.connect(url).get();
+		} catch (IllegalArgumentException  e) {
+			System.out.println("Invalid URL: " + url);
+			this.pagesVisited.remove(url);
+	        return;
+		}catch (IOException  e) {
+	        return;
+		}
+        Elements pageLinks = htmlPage.select("a[href]");
+        System.out.println("Thread " + Thread.currentThread().getId() + " visited page: "
+        					+ url + " \nFound (" + pageLinks.size() + ") link(s)");
+        System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
+        for(Element link : pageLinks)
+        {
+        	this.pagesToVisit.add(link.absUrl("href"));
+        }
+        return;
+    }
+
+    public void writeToFile(String filename) {
+        FileWriter writer;
+        try {
+            writer = new FileWriter(filename);
+            this.pagesVisited.forEach(a -> {
+                try {
+                    writer.write("\n" + a);
+                } catch (IOException e) {
+                    System.err.println(e.getMessage());
+                }
+            });
+            writer.close();
+        } catch (IOException e) {
+            System.err.println(e.getMessage());
+        }
+    }
+}
+
