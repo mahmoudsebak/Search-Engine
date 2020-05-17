@@ -146,6 +146,12 @@ public class IndexerDbAdapter {
         mDb.replace(TABLE_URLS_NAME, null, values);
     }
 
+    public void resetPagesRank() {
+        ContentValues values = new ContentValues();
+        values.put(COL_PAGE_RANK, 1.0/getDocumentsNum());
+        mDb.update(TABLE_URLS_NAME, values, null, null);
+    }
+
     // wordTag is sum of scores of different html tags of a word
     public void addWord(String word, String url, double tf, int wordTag) {
         ContentValues values = new ContentValues();
@@ -177,13 +183,16 @@ public class IndexerDbAdapter {
         }
     }
 
-    public ArrayList<String> queryWords(String[] words) {
+    // `page` is the page number in search result,
+    // each page of search results contains `limit` urls
+    public ArrayList<String> queryWords(String[] words, int limit, int page) {
         Cursor cursor =  mDb.rawQuery(
                 "SELECT url, sum(tf) " +
                 "FROM " + TABLE_WORDS_NAME +
                 " WHERE word IN ("+makePlaceholders(words.length)+") AND tf < 0.5" +
                 " GROUP BY url " +
-                " ORDER BY tf DESC, word_tag DESC",
+                " ORDER BY tf DESC, word_tag DESC " +
+                " LIMIT " + (page-1)*limit + ", " + limit,
                 words
         );
         ArrayList<String> ret = new ArrayList<String>();
@@ -193,7 +202,7 @@ public class IndexerDbAdapter {
         return ret;
     }
 
-    public ArrayList<String> queryPhrase(String phrase) {
+    public ArrayList<String> queryPhrase(String phrase, int limit, int page) {
         Cursor cursor = mDb.query(
                 TABLE_URLS_NAME,
                 new String[] {COL_URL},
@@ -201,7 +210,8 @@ public class IndexerDbAdapter {
                 new String[] {phrase},
                 null,
                 null,
-                null
+                null,
+                (page-1)*limit + ", " + limit
         );
         ArrayList<String> ret = new ArrayList<String>();
         for (cursor.moveToFirst(); !cursor.isAfterLast() ; cursor.moveToNext()) {
