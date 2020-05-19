@@ -4,6 +4,7 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
 import android.view.View;
@@ -11,6 +12,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
 
@@ -37,6 +40,16 @@ public class MainActivity extends AppCompatActivity {
 
 
         Spinner spinner =(Spinner) findViewById(R.id.spinner);
+        EditText editText=(EditText)findViewById(R.id.editText);
+        ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
+        imageButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                Toast.makeText(v.getContext(),"Enter Search Result",Toast.LENGTH_LONG).show();
+                Intent i=new Intent(MainActivity.this,SearchResult.class);
+                i.putExtra("TypedWord",editText.getText());
+                startActivity(i);
+            }
+        });
         ArrayList<String> arrayList = new ArrayList<>();
         arrayList.add("Text");
         arrayList.add("Voice");

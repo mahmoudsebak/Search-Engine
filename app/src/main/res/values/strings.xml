@@ -7,4 +7,6 @@
     <string name="EditBox">Name</string>
     <string name="search_hint">Search</string>
     <string name="search_button">SearchButton</string>
+    <string name="textview1">TextView1</string>
+    <string name="textview2">TextView2</string>
 </resources>
