@@ -15,7 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class CustomAdapterForWebsiteList extends ArrayAdapter {
-    private List<WebSites> webSitesArrayList = new ArrayList<>();
+    private ArrayList<WebSites> webSitesArrayList;
     private final Activity context;
     public CustomAdapterForWebsiteList(Activity context, ArrayList<WebSites> list) {
         super(context, R.layout.website_list_view, list);

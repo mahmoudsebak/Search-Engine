@@ -15,6 +15,7 @@ import java.util.ArrayList;
 public class SearchResult extends AppCompatActivity {
     CustomAdapterForWebsiteList customAdapterForWebsiteList;
     ListView webSitesListView;
+    ArrayList<WebSites> webSites;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -33,7 +34,7 @@ public class SearchResult extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-        ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+        webSites =new ArrayList<WebSites>();
         webSitesListView=findViewById(R.id.websSteListView);
 
         //Mimic Real Data
@@ -41,14 +42,19 @@ public class SearchResult extends AppCompatActivity {
         webSite.setHeader("Google");
         webSite.setDescription("Google is best known search engine that serve billions of people every day");
         webSite.setUrl("https://www.google.com");
-        webSitesArrayList.add(webSite);
+        webSites.add(webSite);
 
         WebSites webSite2=new WebSites();
-        webSite.setHeader("Youtube");
-        webSite.setDescription("Youtube is best known search engine for vidoes");
-        webSite.setUrl("https://www.youtube.com");
-        webSitesArrayList.add(webSite2);
-        customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this,webSitesArrayList);
+        webSite2.setHeader("Youtube");
+        webSite2.setDescription("Youtube is best known search engine for videos");
+        webSite2.setUrl("https://www.youtube.com");
+        webSites.add(webSite2);
+        webSites.add(webSite2);
+        webSites.add(webSite2);
+        webSites.add(webSite2);
+        webSites.add(webSite2);
+        webSites.add(webSite2);
+        customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, webSites);
         webSitesListView.setAdapter(customAdapterForWebsiteList);
 
     }
