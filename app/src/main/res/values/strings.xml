@@ -1,3 +1,10 @@
 <resources>
     <string name="app_name">Search</string>
+    <string name="search_view">SearchView</string>
+    <string name="edit_box">EditBox</string>
+    <string name="search_here">SearchHere</string>
+    <string name="search_icon">SearchIcon</string>
+    <string name="EditBox">Name</string>
+    <string name="search_hint">Search</string>
+    <string name="search_button">SearchButton</string>
 </resources>

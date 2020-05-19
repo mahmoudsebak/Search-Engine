@@ -1,3 +1,5 @@
+package com.example.search;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
