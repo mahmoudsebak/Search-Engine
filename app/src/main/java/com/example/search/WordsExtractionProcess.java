@@ -6,7 +6,11 @@ import org.jsoup.nodes.Document;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.util.*;
+
 /**
  * This class handles Parsing HTML files and perform pre processing on words
  **/
@@ -15,7 +19,7 @@ public class WordsExtractionProcess {
     public static void main(String[] args) {
         stoppingWordsList=new ArrayList<String>();
         loadStoppingWords("/home/mazen/IdeaProjects/SearchEngine/src/StoppingWords");
-        ArrayList<ArrayList<String>> listOfWords=HTMLParser("https://en.wikipedia.org/wiki/American_football");
+        ArrayList<ArrayList<String>> listOfWords=HTMLParser("https://www.wikihow.com/Find-the-Publication-Date-of-a-Website");
         for (ArrayList<String> listOfWord : listOfWords) {
             for (String s : listOfWord) {
                 System.out.println(s);
@@ -25,7 +29,7 @@ public class WordsExtractionProcess {
     /**
      * This function takes url and return Array list of Array list of words in each header
      * after apply pre processing on them.
-    **/
+     **/
     static ArrayList<ArrayList<String>> HTMLParser(String url){
 
         ArrayList<ArrayList<String>>listOfWords=new ArrayList<ArrayList<String>>();
@@ -38,33 +42,53 @@ public class WordsExtractionProcess {
         String paragraph="";
         String span="";
         String body="";
+        int totalNumberOfWords=0;
         try {
             doc = Jsoup.connect(url).get();
-
             title = doc.title();
+            totalNumberOfWords+=SplitStrings(title).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(title),stoppingWordsList)));
 
             header1=doc.body().getElementsByTag("h1").text();
+            totalNumberOfWords+=SplitStrings(header1).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header1),stoppingWordsList)));
             header2=doc.body().getElementsByTag("h2").text();
+            totalNumberOfWords+=SplitStrings(header2).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header2),stoppingWordsList)));
             header3=doc.body().getElementsByTag("h3").text();
+            totalNumberOfWords+=SplitStrings(header3).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header3),stoppingWordsList)));
             header4=doc.body().getElementsByTag("h4").text();
+            totalNumberOfWords+=SplitStrings(header4).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header4),stoppingWordsList)));
             header5=doc.body().getElementsByTag("h5").text();
+            totalNumberOfWords+=SplitStrings(header5).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header5),stoppingWordsList)));
             header6=doc.body().getElementsByTag("h6").text();
+            totalNumberOfWords+=SplitStrings(header6).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header6),stoppingWordsList)));
 
             paragraph=doc.body().getElementsByTag("p").text();
+            totalNumberOfWords+=SplitStrings(paragraph).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(paragraph),stoppingWordsList)));
 
             span=doc.body().getElementsByTag("span").text();
+            totalNumberOfWords+=SplitStrings(span).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(span),stoppingWordsList)));
 
             body=doc.body().getElementsByTag("body").text();
+            totalNumberOfWords+=SplitStrings(body).size();
             listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(body),stoppingWordsList)));
+
+            String lastModified=LastModified(url);
+            String totalNumberOfWordInDoc=Integer.toString(totalNumberOfWords);
+            ArrayList<String>metaData=new ArrayList<>();
+            metaData.add(totalNumberOfWordInDoc);
+            metaData.add(lastModified);
+
+            listOfWords.add(metaData);
+
+
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -74,7 +98,7 @@ public class WordsExtractionProcess {
     }
     /**
      * This function remove un related words and parts from words that are un related and ignore other lang than english
-    **/
+     **/
     static String RemoveUnrelated(String word){
         word=word.replaceAll("\\s*\\[[^\\]]*\\]\\s*", ""); //removing unrelated numbers from brackets
         word=word.replaceAll("\\s*\\{[^\\}]*\\}\\s*", " ");//removing unrelated from pranthes
@@ -109,14 +133,29 @@ public class WordsExtractionProcess {
         return  word;
     }
     /**
+     * This function get last modified date stored by server
+     **/
+    static String LastModified(String webSiteUrl) throws IOException {
+        URL url = new URL(webSiteUrl);
+        URLConnection connection = url.openConnection();
+        String date=connection.getHeaderField("Last-Modified");
+        ArrayList<String>dateArrayList=new ArrayList<>();
+        if(date==null)
+            return "1990";
+        else{
+            dateArrayList=SplitStrings(date);
+            return dateArrayList.get(3);
+        }
+    }
+    /**
      * This function split given string and return array list of split strings
-    **/
+     **/
     public static ArrayList<String> SplitStrings(String sentence){
         return new ArrayList<>(Arrays.asList(sentence.split(" ")));
     }
     /**
      * This function take a path of file that contain list os stopping words to be removed
-    **/
+     **/
     public static void loadStoppingWords(String fileName){
         File file;
         Scanner myReader;
@@ -152,7 +191,7 @@ public class WordsExtractionProcess {
     }
     /**
      * This function apply Stemming algorithm on array list of words
-    **/
+     **/
     public static ArrayList<String>ApplyingStemming(ArrayList<String> listOfWords){
         Stemmer s = new Stemmer();
         ArrayList<String>listOfStemmedWords=new ArrayList<String>();
