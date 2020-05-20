@@ -12,6 +12,7 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
@@ -40,7 +41,14 @@ public class MainActivity extends AppCompatActivity {
 
 
         Spinner spinner =(Spinner) findViewById(R.id.spinner);
-        EditText editText=(EditText)findViewById(R.id.editText);
+        AutoCompleteTextView editText=( AutoCompleteTextView)findViewById(R.id.editText);
+         String[] COUNTRIES = new String[] {
+                "Belgium", "France", "Italy", "Germany", "Spain"
+        };
+        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_dropdown_item_1line, COUNTRIES);
+        editText.setAdapter(suggestionAdapter);
+
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
