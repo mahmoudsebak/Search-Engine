@@ -43,8 +43,6 @@ public class SearchResult extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-        ButtonListConfigure();
-
         webSites =new ArrayList<WebSites>();
         webSitesListView=findViewById(R.id.websSteListView);
 
@@ -64,6 +62,7 @@ public class SearchResult extends AppCompatActivity {
             webSites.add(webSite);
         }
         TOTAL_LIST_ITEMS=webSites.size();
+        ButtonListConfigure();
         loadList(0);
         CheckButBackGround(0);
     }
