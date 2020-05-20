@@ -14,11 +14,21 @@
         android:autofillHints="@string/search_hint" />
 
     <ListView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
         android:id="@+id/websSteListView"
+        android:layout_width="match_parent"
+        android:layout_height="600dp"
         android:paddingStart="5dp"
+        android:paddingLeft="5dp"
         android:paddingEnd="5dp"
-        tools:layout_editor_absoluteX="1dp"
-        android:paddingLeft="5dp" />
+        tools:layout_editor_absoluteX="1dp" />
+    <HorizontalScrollView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content">
+        <LinearLayout
+            android:id="@+id/btnLay"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+        </LinearLayout>
+    </HorizontalScrollView>
 </LinearLayout>
