@@ -15,6 +15,23 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 /**
+ * Pair of Strings class
+ */
+public class Pair
+{
+    public String first,second;
+    public Pair()
+    {
+        first = "";
+        second = "";
+    }
+    public Pair(String a,String b)
+    {
+        first = a;
+        second = b;
+    }
+}
+/**
  * This class handles Parsing HTML files and perform pre processing on words
  **/
 public class WordsExtractionProcess {
@@ -137,7 +154,7 @@ public class WordsExtractionProcess {
      * @param connections: list of pairs <src url,dst url>
      * @return map of each url and its pageRank
      */
-    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair<String,String>> connections)
+    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair> connections)
     {
         HashMap<String,Double> PagesRank = new HashMap<String, Double>();
         HashMap<String,Integer> outDegree = new HashMap<String, Integer>();
