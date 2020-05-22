@@ -19,8 +19,49 @@ import org.jsoup.nodes.Document;
  **/
 public class WordsExtractionProcess {
     public static ArrayList<String>stoppingWordsList;
+
+    // for ranking purposes
+    private static ArrayList<Double>tagScores;
+    private static HashMap<String,Double> extensionsDistance;
+    public static final double title_score = 3;
+    public static final double h1_score = 2;
+    public static final double h2_score = 1.8;
+    public static final double h3_score = 1.6;
+    public static final double h4_score = 1.4;
+    public static final double h5_score = 1.2;
+    public static final double restOfTags_score = 1;
+    public static final int Iterations = 10;
+    public static final String extensions_file = "extensions";
+    public static final double maxDistance = 12000.0;
+    public static final int first_date = 1990;
+    public static final int current_date = 2020;
+
     public static void main(String[] args) {
         stoppingWordsList=new ArrayList<String>();
+
+        //for ranking process
+        tagScores = new ArrayList<Double>();
+        tagScores.add(h1_score);
+        tagScores.add(h2_score);
+        tagScores.add(h3_score);
+        tagScores.add(h4_score);
+        tagScores.add(h5_score);
+        tagScores.add(restOfTags_score);
+        tagScores.add(restOfTags_score);
+        tagScores.add(restOfTags_score);
+        tagScores.add(restOfTags_score);
+        extensionsDistance = new HashMap<String,Double>();
+        readExtensions();
+
+        loadStoppingWords("/home/mohamed/Downloads/apt/Search-Engine/app/src/main/java/com/example/searchStoppingWords");
+
+        String url = "https://www.wikihow.com/Find-the-Publication-Date-of-a-Website";
+        ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
+        ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
+        listOfWords.remove(listOfWords.size()-1);
+        Integer date = Integer.parseInt(metaData.get(0));
+        double date_score = (date-first_date)/(current_date-first_date);
+        Integer total_words = Integer.parseInt(metaData.get(1));
         loadStoppingWords("StoppingWords.txt");
         ArrayList<ArrayList<String>> listOfWords=HTMLParser("https://www.wikihow.com/Find-the-Publication-Date-of-a-Website");
         for (ArrayList<String> listOfWord : listOfWords) {
@@ -28,7 +69,122 @@ public class WordsExtractionProcess {
                 System.out.println(s);
             }
         }
+        HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url,total_words);
+
     }
+    // Ranking functions
+
+    /**
+     * this function reads extensions and stores its distance from egypt
+     */
+    private static void readExtensions()
+    {
+        File file;
+        Scanner myReader;
+        try {
+            file = new File(extensions_file);
+            myReader = new Scanner(file);
+            while (myReader.hasNextLine()) {
+                String line = myReader.nextLine();
+                String[] splitted = line.split(" ",2);
+                extensionsDistance.put(splitted[0],Double.parseDouble(splitted[1]));
+            }
+            myReader.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("An error occurred while reading from file.");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * this function loops through the tags and calculate each word's score
+     * @param listOfWords: all tags with their text
+     * @param url: the processed url
+     * @param total_words: total number of words in the processed url
+     * @return return map of words score in the processed document(url)
+     */
+    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords,String url,Integer total_words)
+    {
+        HashMap<String,Double> wordScore = new HashMap<String, Double>();
+        int idx = 0;
+        for (ArrayList<String> listOfWord : listOfWords) {
+            for (String s : listOfWord) {
+                if(wordScore.containsKey(s))
+                    wordScore.put(s,wordScore.get(s)+ tagScores.get(idx));
+                else
+                    wordScore.put(s, tagScores.get(idx));
+            }
+            idx++;
+        }
+        return wordScore;
+    }
+
+    /**
+     * this function calculates the geographic location's score of a given url
+     * @param url:the processed url
+     * @return the score of geographic location of the processed url
+     */
+    public static double CalculateGeographicLocationScore(String url)
+    {
+        String ext = url.substring(url.lastIndexOf('.'));
+        if(extensionsDistance.containsKey(ext))
+            return 1.0-(extensionsDistance.get(ext)/maxDistance);
+        return 0.0;
+    }
+
+    /**
+     *
+     * @param connections: list of pairs <src url,dst url>
+     * @return map of each url and its pageRank
+     */
+    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair<String,String>> connections)
+    {
+        HashMap<String,Double> PagesRank = new HashMap<String, Double>();
+        HashMap<String,Integer> outDegree = new HashMap<String, Integer>();
+        HashMap<String,HashSet<String>> Pages = new HashMap<String, HashSet<String>>();
+
+        for(int i = 0 ; i < connections.size() ; i++)
+        {
+            if(!Pages.containsKey(connections.get(i).second))
+                Pages.put(connections.get(i).second,new HashSet<String>());
+            else
+            {
+                HashSet<String>temp = Pages.get(connections.get(i).second);
+                temp.add(connections.get(i).first);
+                Pages.put(connections.get(i).second,temp);
+            }
+            PagesRank.put(connections.get(i).first,1.0);
+            PagesRank.put(connections.get(i).second,1.0);
+            if(outDegree.containsKey(connections.get(i).first))
+                outDegree.put(connections.get(i).first,outDegree.get(connections.get(i).first)+1);
+            else
+                outDegree.put(connections.get(i).first,1);
+        }
+
+        for(HashMap.Entry entry : PagesRank.entrySet())
+            entry.setValue(1.0/PagesRank.size());
+
+        for(int i = 0 ; i < Iterations ; i++)
+        {
+            for(HashMap.Entry entry : PagesRank.entrySet())
+            {
+                String Page = (String) entry.getKey();
+                double rank = 0;
+                HashSet in_URL = Pages.get(Page);
+                Iterator<String> it = in_URL.iterator();
+                while(it.hasNext())
+                {
+                    String in = it.next();
+                    if(outDegree.containsKey(in) && !in.contentEquals(Page))
+                        rank += (PagesRank.get(in)/outDegree.get(in));
+                }
+                if(rank > 0)
+                    entry.setValue(rank);
+            }
+        }
+        return PagesRank;
+    }
+
     /**
      * This function takes url and return Array list of Array list of words in each header
      * after apply pre processing on them.
