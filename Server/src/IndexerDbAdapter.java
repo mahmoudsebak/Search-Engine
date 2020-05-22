@@ -102,6 +102,7 @@ public class IndexerDbAdapter {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+        conn.close();
 
         conn = DriverManager.getConnection(CONNECTION_STRING+DATABASE_NAME, USERNAME, PASSWORD);
         createTables();
@@ -117,8 +118,8 @@ public class IndexerDbAdapter {
 
         try (Statement stmt = conn.createStatement();
                 ResultSet rs = stmt.executeQuery("SELECT COUNT(*) FROM " + TABLE_URLS_NAME)) {
-            rs.first();
-            return rs.getInt(1);
+            if (rs.next())
+                return rs.getInt(1);
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -134,7 +135,7 @@ public class IndexerDbAdapter {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.setString(2, content);
-            ps.setDouble(3, 1.0 / getDocumentsNum());
+            ps.setDouble(3, 1.0 / (getDocumentsNum()+1));
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -166,15 +167,17 @@ public class IndexerDbAdapter {
 
     }
 
-    public void addLink(String srcURL, String dstURL) {
+    // return true when the link is added successfully, false otherwise
+    public boolean addLink(String srcURL, String dstURL) {
         String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_LINKS_NAME, COL_SRC_URL, COL_DST_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, srcURL);
             ps.setString(2, dstURL);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
     // utility function to create placeholders (?) given a length
@@ -223,12 +226,13 @@ public class IndexerDbAdapter {
     }
 
     public ArrayList<String> queryPhrase(String phrase, int limit, int page) {
-        String sql = String.format("SELECT %s FROM %s WHERE %s LIKE %?% LIMIT ?, ?", COL_URL, TABLE_WORDS_NAME,
+        String sql = String.format("SELECT %s FROM %s WHERE %s LIKE ? LIMIT ?, ?", COL_URL, TABLE_URLS_NAME,
                 COL_CONTENT);
-
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setString(1, phrase);
+            // escape wildcard characters in phrase query
+            phrase = phrase.replace("_", "%_").replace("%", "%%");
+            ps.setString(1, "%%"+phrase+"%%");
             ps.setInt(2, (page - 1) * limit);
             ps.setInt(3, limit);
 
@@ -262,17 +266,14 @@ public class IndexerDbAdapter {
     public void deleteAllURLS() {
         String sql = String.format("DELETE FROM %s", TABLE_WORDS_NAME);
         try (Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate(sql);
+            stmt.addBatch(sql);
+            sql = String.format("DELETE FROM %s", TABLE_URLS_NAME);
+            stmt.addBatch(sql);
+            stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
 
-        sql = String.format("DELETE FROM %s", TABLE_URLS_NAME);
-        try (Statement stmt = conn.createStatement()) {
-            stmt.executeUpdate(sql);
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
     }
 
 }
