@@ -1,15 +1,18 @@
-package com.example.search;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Scanner;
+import java.util.Set;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * This class handles Parsing HTML files and perform pre processing on words
@@ -18,7 +21,7 @@ public class WordsExtractionProcess {
     public static ArrayList<String>stoppingWordsList;
     public static void main(String[] args) {
         stoppingWordsList=new ArrayList<String>();
-        loadStoppingWords("/home/mazen/IdeaProjects/SearchEngine/src/StoppingWords");
+        loadStoppingWords("StoppingWords.txt");
         ArrayList<ArrayList<String>> listOfWords=HTMLParser("https://www.wikihow.com/Find-the-Publication-Date-of-a-Website");
         for (ArrayList<String> listOfWord : listOfWords) {
             for (String s : listOfWord) {
