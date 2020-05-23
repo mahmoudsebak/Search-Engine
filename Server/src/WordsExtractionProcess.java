@@ -15,26 +15,28 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 /**
- * Pair of Strings class
- */
-public class Pair
-{
-    public String first,second;
-    public Pair()
-    {
-        first = "";
-        second = "";
-    }
-    public Pair(String a,String b)
-    {
-        first = a;
-        second = b;
-    }
-}
-/**
  * This class handles Parsing HTML files and perform pre processing on words
  **/
 public class WordsExtractionProcess {
+
+    /**
+     * Pair of Strings class
+     */
+    public class Pair
+    {
+        public String first,second;
+        public Pair()
+        {
+            first = "";
+            second = "";
+        }
+        public Pair(String a,String b)
+        {
+            first = a;
+            second = b;
+        }
+    }
+
     public static ArrayList<String>stoppingWordsList;
 
     // for ranking purposes
@@ -73,14 +75,13 @@ public class WordsExtractionProcess {
         loadStoppingWords("/home/mohamed/Downloads/apt/Search-Engine/app/src/main/java/com/example/searchStoppingWords");
 
         String url = "https://www.wikihow.com/Find-the-Publication-Date-of-a-Website";
+        loadStoppingWords("StoppingWords.txt");
         ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
         ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
         listOfWords.remove(listOfWords.size()-1);
         Integer date = Integer.parseInt(metaData.get(0));
         double date_score = (date-first_date)/(current_date-first_date);
         Integer total_words = Integer.parseInt(metaData.get(1));
-        loadStoppingWords("StoppingWords.txt");
-        ArrayList<ArrayList<String>> listOfWords=HTMLParser("https://www.wikihow.com/Find-the-Publication-Date-of-a-Website");
         for (ArrayList<String> listOfWord : listOfWords) {
             for (String s : listOfWord) {
                 System.out.println(s);
