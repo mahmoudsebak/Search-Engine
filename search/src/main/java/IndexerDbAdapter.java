@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class IndexerDbAdapter {
 
@@ -78,7 +79,11 @@ public class IndexerDbAdapter {
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s;", DATABASE_NAME);
 
     public IndexerDbAdapter() {
-
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     private void createTables() {
@@ -94,23 +99,34 @@ public class IndexerDbAdapter {
         }
     }
 
-    public void open() throws SQLException, ClassNotFoundException {
-        conn = DriverManager.getConnection(CONNECTION_STRING, USERNAME, PASSWORD);
+    public void open() {
+        try {
+            
+            conn = DriverManager.getConnection(CONNECTION_STRING, USERNAME, PASSWORD);
+            
+            try (Statement stmt = conn.createStatement()) {
+                stmt.executeUpdate(DATABASE_CREATE);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+            conn.close();
+            
+            conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME, USERNAME, PASSWORD);
+            createTables();
 
-        try (Statement stmt =  conn.createStatement()) {
-            stmt.executeUpdate(DATABASE_CREATE);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        conn.close();
-
-        conn = DriverManager.getConnection(CONNECTION_STRING+DATABASE_NAME, USERNAME, PASSWORD);
-        createTables();
     }
 
-    public void close() throws SQLException {
+    public void close() {
         if (conn != null) {
-            conn.close();
+            try {
+                conn.close();
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -135,7 +151,7 @@ public class IndexerDbAdapter {
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.setString(2, content);
-            ps.setDouble(3, 1.0 / (getDocumentsNum()+1));
+            ps.setDouble(3, 1.0 / (getDocumentsNum() + 1));
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -197,9 +213,14 @@ public class IndexerDbAdapter {
 
     // `page` is the page number in search result,
     // each page of search results contains `limit` urls
-    public ArrayList<String> queryWords(String[] words, int limit, int page) {
-        String sql = String.format("SELECT %s, sum(%s) FROM %s WHERE word IN (" + makePlaceholders(words.length)
-                + ") GROUP BY url " + " ORDER BY %s DESC LIMIT ?, ?", COL_URL, COL_SCORE, TABLE_WORDS_NAME, COL_SCORE);
+    public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
+        String sql = String.format("SELECT %s, %s FROM %s"
+                + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
+                + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
+                + ") and %s < 0.6 GROUP by %s ORDER BY SUM(%s*idf) DESC LIMIT ?, ?", COL_URL, COL_CONTENT,
+                TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD, COL_WORD,
+                TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_SCORE);
+
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
@@ -210,9 +231,12 @@ public class IndexerDbAdapter {
             ps.setInt(words.length + 2, limit);
 
             try (ResultSet rs = ps.executeQuery()) {
-                ArrayList<String> ret = new ArrayList<String>();
+                ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
                 while (rs.next()) {
-                    ret.add(rs.getString(1));
+                    HashMap<String, String> elem = new HashMap<String, String>();
+                    elem.put("url", rs.getString(1));
+                    elem.put("content", rs.getString(2));
+                    ret.add(elem);
                 }
                 return ret;
             } catch (SQLException e) {
@@ -225,21 +249,24 @@ public class IndexerDbAdapter {
         return null;
     }
 
-    public ArrayList<String> queryPhrase(String phrase, int limit, int page) {
-        String sql = String.format("SELECT %s FROM %s WHERE %s LIKE ? LIMIT ?, ?", COL_URL, TABLE_URLS_NAME,
+    public ArrayList<HashMap<String, String>> queryPhrase(String phrase, int limit, int page) {
+        String sql = String.format("SELECT %s, %s FROM %s WHERE %s LIKE ? LIMIT ?, ?", COL_URL, COL_CONTENT, TABLE_URLS_NAME,
                 COL_CONTENT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
             // escape wildcard characters in phrase query
             phrase = phrase.replace("_", "%_").replace("%", "%%");
-            ps.setString(1, "%%"+phrase+"%%");
+            ps.setString(1, "%%" + phrase + "%%");
             ps.setInt(2, (page - 1) * limit);
             ps.setInt(3, limit);
 
             try (ResultSet rs = ps.executeQuery()) {
-                ArrayList<String> ret = new ArrayList<String>();
+                ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
                 while (rs.next()) {
-                    ret.add(rs.getString(1));
+                    HashMap<String, String> elem = new HashMap<String, String>();
+                    elem.put("url", rs.getString(1));
+                    elem.put("content", rs.getString(2));
+                    ret.add(elem);
                 }
                 return ret;
             } catch (SQLException e) {

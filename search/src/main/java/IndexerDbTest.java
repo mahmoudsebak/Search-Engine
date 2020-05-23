@@ -1,4 +1,7 @@
 import java.util.ArrayList;
+import java.util.HashMap;
+import com.google.gson.Gson;
+
 
 public class IndexerDbTest {
     public static void main(String[] args) throws Exception {
@@ -12,20 +15,18 @@ public class IndexerDbTest {
         dbAdapter.addWord("competitive", "https://codeforces.com/", 0.5);
 
         dbAdapter.resetPagesRank();
-        ArrayList<String> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
-        for (String string : arr) {
-            System.out.println(string);
-        }
+        ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
+        Gson gson = new Gson();
+        System.out.println(gson.toJson(arr));
         System.out.println();
+
         arr = dbAdapter.queryWords(new String [] {"competitive"}, 10, 1);
-        for (String string : arr) {
-            System.out.println(string);
-        }
+        System.out.println(arr);
         System.out.println();
+
         arr = dbAdapter.queryPhrase("competitive programming", 10, 1);
-        for (String string : arr) {
-            System.out.println(string);
-        }
+        System.out.println(arr);
+
         dbAdapter.close();
     }
 }
