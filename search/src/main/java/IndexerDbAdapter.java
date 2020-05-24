@@ -158,6 +158,18 @@ public class IndexerDbAdapter {
         }
     }
 
+    public String getUnindexedURL() {
+        String sql = String.format("SELECT %s FROM %s WHERE %s IS NULL LIMIT 1", COL_URL, TABLE_URLS_NAME, COL_CONTENT);
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            if (rs.next())
+                return rs.getString(1);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void resetPagesRank() {
         String sql = String.format("UPDATE %s SET %s = %s", TABLE_URLS_NAME, COL_PAGE_RANK, 1.0 / getDocumentsNum());
         try (Statement stmt = conn.createStatement()) {

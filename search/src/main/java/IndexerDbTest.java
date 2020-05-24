@@ -9,6 +9,7 @@ public class IndexerDbTest {
         dbAdapter.open();
         dbAdapter.addURL("https://codeforces.com/", "a very long document related to competitive programming");
         dbAdapter.addURL("https://www.geeksforgeeks.org/", "a very long document related to programming in general");
+        dbAdapter.addURL("https://www.youtube.com/", null);
         dbAdapter.addLink("https://www.geeksforgeeks.org/", "https://codeforces.com/");
         dbAdapter.addWord("programming", "https://www.geeksforgeeks.org/", 0.4);
         dbAdapter.addWord("programming", "https://codeforces.com/", 0.4);
@@ -26,7 +27,9 @@ public class IndexerDbTest {
 
         arr = dbAdapter.queryPhrase("competitive programming", 10, 1);
         System.out.println(arr);
+        System.out.println();
 
+        System.out.println(dbAdapter.getUnindexedURL());
         dbAdapter.close();
     }
 }
