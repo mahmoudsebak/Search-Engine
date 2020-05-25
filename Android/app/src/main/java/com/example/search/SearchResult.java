@@ -12,6 +12,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -24,8 +25,22 @@ import android.widget.ListView;
 import android.widget.SearchView;
 import android.widget.TextView;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.NoConnectionError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.TimeoutError;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SearchResult extends AppCompatActivity {
     private static final int REQUEST_CODE = 1234;
@@ -197,5 +212,64 @@ public class SearchResult extends AppCompatActivity {
             }
         }
         super.onActivityResult(requestCode, resultCode, data);
+    }
+    public void getResponse(
+            int method,
+            String url,
+            JSONObject jsonValue,
+            final VolleyCallback callback,final  String query,final String pageNumber) {
+        StringRequest stringRequest =
+                new StringRequest(
+                        Request.Method.POST,
+                        url,
+                        new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                callback.onSuccessResponse(response);
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                NetworkResponse networkResponse = error.networkResponse;
+                                String errorMessage = "Unknown error";
+                                if (networkResponse == null) {
+                                    if (error.getClass().equals(TimeoutError.class)) {
+                                        errorMessage = "Request timeout";
+                                    } else if (error.getClass().equals(NoConnectionError.class)) {
+                                        errorMessage = "Failed to connect server";
+                                    }
+                                } else {
+                                    String result = new String(networkResponse.data);
+                                    try {
+                                        JSONObject response = new JSONObject(result);
+                                        String status = response.getString("status");
+                                        String message = response.getString("message");
+
+                                        Log.e("Error Status", status);
+                                        Log.e("Error Message", message);
+
+                                        if (networkResponse.statusCode == 404) {
+                                            errorMessage = "Resource not found";
+                                        } else if (networkResponse.statusCode == 500) {
+                                            errorMessage = message+" Something is getting wrong";
+                                        }
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                Log.i("Error", errorMessage);
+                                error.printStackTrace();
+                            }
+                        }) {
+                    @Override
+                    protected Map<String, String> getParams() throws AuthFailureError {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("query", query);
+                        params.put("page", pageNumber);
+                        return params;
+                    }
+                };
+        VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
 }
