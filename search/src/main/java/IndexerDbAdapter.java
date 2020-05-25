@@ -54,7 +54,7 @@ public class IndexerDbAdapter {
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
-            "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(512), %s TEXT, %s double);",
+            "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256), %s TEXT, %s double);",
             TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_PAGE_RANK);
 
     private static final String TABLE1_INDEX_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s);",
@@ -62,7 +62,7 @@ public class IndexerDbAdapter {
 
     private static final String TABLE2_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(512), %s varchar(512), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE);",
+                    + " %s varchar(256), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE);",
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
@@ -71,7 +71,7 @@ public class IndexerDbAdapter {
 
     public static final String TABLE3_LINKS_CREATE = String.format(
             "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(512), %s varchar(512), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE,"
+                    + " %s varchar(256), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE,"
                     + " FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE, UNIQUE(%s, %s))",
             TABLE_LINKS_NAME, COL_ID, COL_SRC_URL, COL_DST_URL, COL_SRC_URL, TABLE_URLS_NAME, COL_URL, COL_DST_URL,
             TABLE_URLS_NAME, COL_URL, COL_SRC_URL, COL_DST_URL);

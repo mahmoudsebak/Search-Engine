@@ -4,22 +4,36 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
+import android.app.Activity;
+import android.app.LauncherActivity;
+import android.content.Context;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.ArrayAdapter;
+import android.widget.AbsListView;
 import android.widget.Button;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class SearchResult extends AppCompatActivity {
+    int currentFirstVisibleItem = 0;
+    int currentVisibleItemCount = 0;
+    int totalItemCount = 0;
+    int currentScrollState = 0;
+    boolean loadingMore = false;
+    Long startIndex = 0L;
+    Long offset = 10L;
+    View footerView;
+
     CustomAdapterForWebsiteList customAdapterForWebsiteList;
     ListView webSitesListView;
-    ArrayList<WebSites> webSites;
+    ArrayList<WebSites> x;
 
     public int TOTAL_LIST_ITEMS = 1030;
     public int NUM_ITEMS_PAGE   = 10;
@@ -43,29 +57,112 @@ public class SearchResult extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-        webSites =new ArrayList<WebSites>();
+        x =new ArrayList<WebSites>();
         webSitesListView=findViewById(R.id.websSteListView);
+        footerView = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.base_list_item_loading_footer, null, false);
 
-        //Mimic Real Data
         WebSites webSite=new WebSites();
         webSite.setHeader("Google");
         webSite.setDescription("Google is best known search engine that serve billions of people every day");
         webSite.setUrl("https://www.google.com");
-        webSites.add(webSite);
+        x.add(webSite);
 
         WebSites webSite2=new WebSites();
         webSite2.setHeader("Youtube");
         webSite2.setDescription("Youtube is best known search engine for videos");
         webSite2.setUrl("https://www.youtube.com");
-        webSites.add(webSite2);
-        for(int i=0;i<50;i++){
-            webSites.add(webSite);
+        x.add(webSite2);
+        for(int i=0;i<7;i++){
+            x.add(webSite);
         }
-        TOTAL_LIST_ITEMS=webSites.size();
-        ButtonListConfigure();
-        loadList(0);
-        CheckButBackGround(0);
+        customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this,x);
+        webSitesListView.setAdapter(customAdapterForWebsiteList);
+        webSitesListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+
+            public void onScrollStateChanged(AbsListView view, int scrollState) {
+
+
+            }
+
+            public void onScroll(AbsListView view, int firstVisibleItem,
+                                 int visibleItemCount, int totalItemCount) {
+
+                if(firstVisibleItem+visibleItemCount == totalItemCount && totalItemCount!=0)
+                {
+                    if(!loadingMore)
+                    {
+                        loadingMore = true;
+                        new LoadMoreItemsTask((Activity) view.getContext()).execute();
+                        webSitesListView.setSelection(firstVisibleItem);
+                    }
+
+                }
+            }
+        });
+
     }
+    private class LoadMoreItemsTask extends AsyncTask<Void, Void, List<WebSites>> {
+
+        private Activity activity;
+        private View footer;
+
+        private LoadMoreItemsTask(Activity activity) {
+            this.activity = (Activity) activity;
+            loadingMore = true;
+            footer = ((Activity) activity).getLayoutInflater().inflate(R.layout.base_list_item_loading_footer, null);
+        }
+
+        @Override
+        protected void onPreExecute() {
+            webSitesListView.addFooterView(footer);
+            super.onPreExecute();
+        }
+
+        @Override
+        protected List<WebSites> doInBackground(Void... voids) {
+
+            return getNextItems(startIndex, offset);
+        }
+
+        private List<WebSites> getNextItems(Long startIndex, Long offset) {
+
+            //Mimic Real Data
+            ArrayList<WebSites>arr=new ArrayList<>();
+            for(int i=0;i<7;i++){
+                WebSites webSite=new WebSites();
+                webSite.setHeader("Google"+i);
+                webSite.setDescription("Google is best known search engine that serve billions of people every day");
+                webSite.setUrl("https://www.google.com");
+                arr.add(webSite);
+                arr.add(webSite);
+            }
+            return  arr;
+        }
+
+        @Override
+        protected void onPostExecute(List<WebSites> listItems) {
+            if (footer != null) {
+                webSitesListView.removeFooterView(footer);
+            }
+            loadingMore = false;
+            if (listItems.size() > 0) {
+                startIndex = startIndex + listItems.size();
+                setItems(listItems);
+            }
+            super.onPostExecute(listItems);
+        }
+
+        private void setItems(List<WebSites> listItems) {
+            x.addAll(listItems);
+            loadingMore=false;
+            customAdapterForWebsiteList.notifyDataSetChanged();
+        }
+    }
+}
+
+
+
+/*
     private void ButtonListConfigure()
     {
         int val = TOTAL_LIST_ITEMS%NUM_ITEMS_PAGE;
@@ -95,9 +192,11 @@ public class SearchResult extends AppCompatActivity {
         }
 
     }
-    /**
+    */
+/**
      * Method for Checking Button Backgrounds
-     */
+     *//*
+
     private void CheckButBackGround(int index)
     {
         for(int i=0;i<noOfBtns;i++)
@@ -116,10 +215,12 @@ public class SearchResult extends AppCompatActivity {
 
     }
 
-    /**
+    */
+/**
      * Method for loading data in listview
      * @param number
-     */
+     *//*
+
     private void loadList(int number)
     {
         ArrayList<WebSites> sort = new ArrayList<WebSites>();
@@ -138,5 +239,4 @@ public class SearchResult extends AppCompatActivity {
         }
         customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sort);
         webSitesListView.setAdapter(customAdapterForWebsiteList);
-    }
-}
+    }*/
