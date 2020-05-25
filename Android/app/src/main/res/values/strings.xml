@@ -11,4 +11,6 @@
     <string name="textview2">TextView2</string>
     <string name="loading_list_items">Loading more</string>
     <string name="vociesearch">VocieSearch</string>
+    <string name="text">Text</string>
+    <string name="image">Image</string>
 </resources>

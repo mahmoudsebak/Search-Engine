@@ -7,38 +7,38 @@ import androidx.core.content.ContextCompat;
 import android.app.Activity;
 import android.app.LauncherActivity;
 import android.content.Context;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AbsListView;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ListView;
+import android.widget.SearchView;
+import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class SearchResult extends AppCompatActivity {
-    int currentFirstVisibleItem = 0;
-    int currentVisibleItemCount = 0;
-    int totalItemCount = 0;
-    int currentScrollState = 0;
+    private static final int REQUEST_CODE = 1234;
     boolean loadingMore = false;
     Long startIndex = 0L;
     Long offset = 10L;
     View footerView;
+    ImageButton voiceSearch;
+    AutoCompleteTextView editText;
 
     CustomAdapterForWebsiteList customAdapterForWebsiteList;
     ListView webSitesListView;
     ArrayList<WebSites> x;
-
-    public int TOTAL_LIST_ITEMS = 1030;
-    public int NUM_ITEMS_PAGE   = 10;
-    private int noOfBtns;
-    private Button[] btns;
 
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
@@ -60,6 +60,17 @@ public class SearchResult extends AppCompatActivity {
         x =new ArrayList<WebSites>();
         webSitesListView=findViewById(R.id.websSteListView);
         footerView = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.base_list_item_loading_footer, null, false);
+        TextView textResult=findViewById(R.id.text_result);
+        TextView imageResult=findViewById(R.id.image_result);
+
+        ImageButton search=findViewById(R.id.imageButton1);
+        voiceSearch=findViewById(R.id.search_voice_btn1);
+        voiceSearch.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                startVoiceRecognitionActivity();
+            }
+        });
+        editText=findViewById(R.id.editText1);
 
         WebSites webSite=new WebSites();
         webSite.setHeader("Google");
@@ -158,85 +169,33 @@ public class SearchResult extends AppCompatActivity {
             customAdapterForWebsiteList.notifyDataSetChanged();
         }
     }
+    /**
+     * Fire an intent to start the voice recognition activity.
+     */
+    private void startVoiceRecognitionActivity()
+    {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Voice searching...");
+        startActivityForResult(intent, REQUEST_CODE);
+    }
+    /**
+     * Handle the results from the voice recognition activity.
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK)
+        {
+            // Populate the wordsList with the String values the recognition engine thought it heard
+            final ArrayList < String > matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if (!matches.isEmpty())
+            {
+                String Query = matches.get(0);
+                editText.setText(Query);
+                voiceSearch.setEnabled(true);
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
+    }
 }
-
-
-
-/*
-    private void ButtonListConfigure()
-    {
-        int val = TOTAL_LIST_ITEMS%NUM_ITEMS_PAGE;
-        val = val==0?0:1;
-        noOfBtns=TOTAL_LIST_ITEMS/NUM_ITEMS_PAGE+val;
-
-        LinearLayout ll = findViewById(R.id.btnLay);
-
-        btns  = new Button[noOfBtns];
-
-        for(int i=0;i<noOfBtns;i++)
-        {
-            btns[i] =   new Button(this);
-            btns[i].setBackgroundColor(getResources().getColor(android.R.color.transparent));
-            btns[i].setText(""+(i+1));
-
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT);
-            ll.addView(btns[i], lp);
-
-            final int j = i;
-            btns[j].setOnClickListener(new View.OnClickListener() {
-                public void onClick(View v) {
-                    loadList(j);
-                    CheckButBackGround(j);
-                }
-            });
-        }
-
-    }
-    */
-/**
-     * Method for Checking Button Backgrounds
-     *//*
-
-    private void CheckButBackGround(int index)
-    {
-        for(int i=0;i<noOfBtns;i++)
-        {
-            if(i==index)
-            {
-                btns[index].setBackgroundDrawable(getResources().getDrawable(R.drawable.box_green));
-                btns[i].setTextColor(getResources().getColor(android.R.color.white));
-            }
-            else
-            {
-                btns[i].setBackgroundColor(getResources().getColor(android.R.color.transparent));
-                btns[i].setTextColor(getResources().getColor(android.R.color.black));
-            }
-        }
-
-    }
-
-    */
-/**
-     * Method for loading data in listview
-     * @param number
-     *//*
-
-    private void loadList(int number)
-    {
-        ArrayList<WebSites> sort = new ArrayList<WebSites>();
-
-        int start = number * NUM_ITEMS_PAGE;
-        for(int i=start;i<(start)+NUM_ITEMS_PAGE;i++)
-        {
-            if(i<webSites.size())
-            {
-                sort.add(webSites.get(i));
-            }
-            else
-            {
-                break;
-            }
-        }
-        customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sort);
-        webSitesListView.setAdapter(customAdapterForWebsiteList);
-    }*/

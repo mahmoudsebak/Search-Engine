@@ -7,11 +7,95 @@
     android:layout_height="match_parent"
     tools:context=".SearchResult">
 
-    <SearchView
-        android:id="@+id/searchView"
+    <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="60dp"
-        android:autofillHints="@string/search_hint" />
+        android:background="@color/dark_cyan">
+
+        <AutoCompleteTextView
+            android:id="@+id/editText1"
+            android:layout_width="wrap_content"
+            android:layout_height="44dp"
+            android:paddingStart="5dp"
+            android:paddingEnd="5dp"
+            android:autofillHints="@string/search_hint"
+            android:background="@color/white"
+            android:ems="10"
+            android:hint="@string/search_hint"
+            android:inputType="text"
+            android:text=""
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.555"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.502"
+            android:paddingLeft="5dp" />
+
+        <ImageButton
+            android:id="@+id/search_voice_btn1"
+            android:layout_width="70dp"
+            android:layout_height="44dp"
+            android:background="@color/gray"
+            android:paddingStart="3dp"
+            android:paddingEnd="3dp"
+            app:srcCompat="@drawable/ic_keyboard_voice_black_24dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toStartOf="@+id/editText1"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.502"
+            android:paddingLeft="3dp"
+            android:contentDescription="@string/vociesearch"
+            tools:ignore="VectorDrawableCompat" />
+
+        <ImageButton
+            android:id="@+id/imageButton1"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="@color/orange"
+            android:contentDescription="@string/search_button"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toEndOf="@+id/editText1"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.502"
+            app:srcCompat="@drawable/ic_search_black_24dp"
+            tools:ignore="VectorDrawableCompat" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:paddingStart="15dp"
+        android:paddingEnd="15dp"
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:layout_height="35dp"
+        android:paddingLeft="15dp">
+        <TextView
+            android:id="@+id/text_result"
+            android:textSize="20sp"
+            android:paddingTop="5dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:text="@string/text"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content">
+        </TextView>
+        <TextView
+            android:id="@+id/image_result"
+            android:text="@string/image"
+            android:textSize="20sp"
+            android:paddingTop="5dp"
+            android:paddingStart="10dp"
+            android:paddingEnd="10dp"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content">
+        </TextView>
+    </LinearLayout>
 
     <ListView
         android:id="@+id/websSteListView"
