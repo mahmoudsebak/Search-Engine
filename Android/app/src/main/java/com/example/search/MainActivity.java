@@ -7,6 +7,7 @@ import androidx.core.content.ContextCompat;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
@@ -21,7 +22,9 @@ import android.widget.Toast;
 import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
-
+    private static final int REQUEST_CODE = 1234;
+    AutoCompleteTextView editText;
+    ImageButton voiceSearch;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,9 +43,8 @@ public class MainActivity extends AppCompatActivity {
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
 
-        Spinner spinner =(Spinner) findViewById(R.id.spinner);
-        AutoCompleteTextView editText=( AutoCompleteTextView)findViewById(R.id.editText);
-         String[] COUNTRIES = new String[] {
+        editText=( AutoCompleteTextView)findViewById(R.id.editText);
+        String[] COUNTRIES = new String[] {
                 "Belgium", "France", "Italy", "Germany", "Spain"
         };
         ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
@@ -58,22 +60,40 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(i);
             }
         });
-        ArrayList<String> arrayList = new ArrayList<>();
-        arrayList.add("Text");
-        arrayList.add("Voice");
-        arrayList.add("Image");
-        ArrayAdapter<String> arrayAdapter = new ArrayAdapter<String>
-                (this, android.R.layout.simple_spinner_item, arrayList);
-        arrayAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spinner.setAdapter(arrayAdapter);
-        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-            @Override
-            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                Toast.makeText(parent.getContext(), "Selected: " ,Toast.LENGTH_LONG).show();
-            }
-            @Override
-            public void onNothingSelected(AdapterView <?> parent) {
+        voiceSearch=(ImageButton) findViewById(R.id.search_voice_btn);
+        voiceSearch.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                startVoiceRecognitionActivity();
             }
         });
+    }
+    /**
+     * Fire an intent to start the voice recognition activity.
+     */
+    private void startVoiceRecognitionActivity()
+    {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Voice searching...");
+        startActivityForResult(intent, REQUEST_CODE);
+    }
+    /**
+     * Handle the results from the voice recognition activity.
+     */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data)
+    {
+        if (requestCode == REQUEST_CODE && resultCode == RESULT_OK)
+        {
+            // Populate the wordsList with the String values the recognition engine thought it heard
+            final ArrayList < String > matches = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            if (!matches.isEmpty())
+            {
+                String Query = matches.get(0);
+                editText.setText(Query);
+                voiceSearch.setEnabled(true);
+            }
+        }
+        super.onActivityResult(requestCode, resultCode, data);
     }
 }

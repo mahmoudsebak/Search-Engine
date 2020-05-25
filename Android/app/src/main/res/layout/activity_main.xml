@@ -26,19 +26,23 @@
         app:layout_constraintVertical_bias="0.502"
         android:paddingLeft="5dp" />
 
-    <Spinner
-        android:id="@+id/spinner"
+    <ImageButton
+        android:id="@+id/search_voice_btn"
         android:layout_width="70dp"
         android:layout_height="44dp"
         android:background="@color/gray"
         android:paddingStart="3dp"
+        android:paddingEnd="3dp"
+        app:srcCompat="@drawable/ic_keyboard_voice_black_24dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@+id/editText"
         app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_bias="0.502"
-        android:paddingLeft="3dp" />
+        android:paddingLeft="3dp"
+        android:contentDescription="@string/vociesearch"
+        tools:ignore="VectorDrawableCompat" />
 
     <ImageButton
         android:id="@+id/imageButton"
