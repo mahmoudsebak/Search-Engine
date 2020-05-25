@@ -76,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 getResponse(
                         Request.Method.GET,
-                        "http://192.168.1.14:8080/search/query?",
+                        "http://192.168.1.14:8080/search/query?query="+editText.getText().toString()+"&page="+"1",
                         null,
                         new VolleyCallback() {
                             @Override
