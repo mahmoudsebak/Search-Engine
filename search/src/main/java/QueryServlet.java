@@ -40,7 +40,9 @@ public class QueryServlet extends HttpServlet {
 
 		dbAdapter.close();
 		
-		out.print(gson.toJson(result));
+		HashMap<String, Object> res = new HashMap<>();
+		res.put("result", result);
+		out.print(gson.toJson(res));
 		out.flush();
 	}
 
