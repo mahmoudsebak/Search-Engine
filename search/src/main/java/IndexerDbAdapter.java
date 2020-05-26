@@ -53,6 +53,7 @@ public class IndexerDbAdapter {
     private static final String TABLE_WORDS_NAME = "tb2_words";
     private static final String TABLE_WORDS_INDEX_NAME = "tb2_words_url_index";
     private static final String TABLE_LINKS_NAME = "tb3_links";
+    private static final String TABLE_LINKS_INDEX_NAME = "tb3_links_index";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -75,9 +76,13 @@ public class IndexerDbAdapter {
     public static final String TABLE3_LINKS_CREATE = String.format(
             "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
                     + " %s varchar(256), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE,"
-                    + " FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE, UNIQUE(%s, %s))",
+                    + " FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
             TABLE_LINKS_NAME, COL_ID, COL_SRC_URL, COL_DST_URL, COL_SRC_URL, TABLE_URLS_NAME, COL_URL, COL_DST_URL,
-            TABLE_URLS_NAME, COL_URL, COL_SRC_URL, COL_DST_URL);
+            TABLE_URLS_NAME, COL_URL);
+
+    private static final String TABLE3_INDEX_CREATE = String.format(
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME, COL_SRC_URL,
+            COL_DST_URL);
 
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s;", DATABASE_NAME);
 
@@ -96,6 +101,7 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE2_CREATE);
             stmt.addBatch(TABLE2_INDEX_CREATE);
             stmt.addBatch(TABLE3_LINKS_CREATE);
+            stmt.addBatch(TABLE3_INDEX_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -162,9 +168,8 @@ public class IndexerDbAdapter {
     }
 
     public void updateURL(String url, String content, double pageRank, double date_score, double geo_score) {
-        String sql = String.format(
-                "UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?",
-                TABLE_URLS_NAME, COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME,
+                COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, content);
             ps.setDouble(2, pageRank);
