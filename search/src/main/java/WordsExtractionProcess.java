@@ -210,7 +210,53 @@ public class WordsExtractionProcess {
         }
         return PagesRank;
     }
+    /**
+     * This function used in to parse html without pre processing to be used in phrase searching 
+     **/
+    static ArrayList<String>HTMLPhraseParser(String url){
+        ArrayList<String>listOfStrings=new ArrayList<String>();
 
+        // HTML Document
+        Document doc;
+
+        String title="";
+        String header1 ="",header2="",header3="",header4="",header5="",header6="";
+        String paragraph="";
+        String span="";
+        String body="";
+        try {
+            doc = Jsoup.connect(url).get();
+            title = doc.title();
+            listOfStrings.add(title);
+
+            header1=doc.body().getElementsByTag("h1").text();
+            listOfStrings.add(header1);
+            header2=doc.body().getElementsByTag("h2").text();
+            listOfStrings.add(header2);
+            header3=doc.body().getElementsByTag("h3").text();
+            listOfStrings.add(header3);
+            header4=doc.body().getElementsByTag("h4").text();
+            listOfStrings.add(header4);
+            header5=doc.body().getElementsByTag("h5").text();
+            listOfStrings.add(header5);
+            header6=doc.body().getElementsByTag("h6").text();
+            listOfStrings.add(header6);
+
+            paragraph=doc.body().getElementsByTag("p").text();
+            listOfStrings.add(paragraph);
+
+            span=doc.body().getElementsByTag("span").text();
+            listOfStrings.add(span);
+
+            body=doc.body().getElementsByTag("body").text();
+            listOfStrings.add(body);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return listOfStrings;
+    }
     /**
      * This function takes url and return Array list of Array list of words in each header
      * after apply pre processing on them.
