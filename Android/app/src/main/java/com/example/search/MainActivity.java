@@ -84,17 +84,12 @@ public class MainActivity extends AppCompatActivity {
                                 try {
                                     // converting response to json object
                                     JSONObject obj = new JSONObject(response);
-
                                     // if no error in response
                                     // getting the result from the response
-                                    JSONArray sentMessages = obj.getJSONArray("");
-                                    JSONObject recived=obj.optJSONObject("received");
-                                    JSONArray recivedMessage = recived.getJSONArray("all");
-                                    Toast.makeText(
-                                            v.getContext(),
-                                            "All message received",
-                                            Toast.LENGTH_SHORT)
-                                            .show();
+                                    JSONArray searchResult = obj.getJSONArray("result");
+                                    for(int i=0;i<searchResult.length();i++) {
+                                        JSONObject current = searchResult.getJSONObject(i);
+                                    }
                                 } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
