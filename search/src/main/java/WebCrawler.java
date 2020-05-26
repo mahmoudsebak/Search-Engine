@@ -9,19 +9,20 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
+import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.Adapter;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 public class WebCrawler {
-
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
-        seedPages.add("https://www.google.com/");
         seedPages.add("https://www.youtube.com/");
         seedPages.add("https://codeforces.com/");
         seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("https://ncataggies.com/galleries/cross-country/elon-invite/287");
+        seedPages.add("https://en.wikipedia.org/wiki/Football");
         Crawler crawler = new Crawler(seedPages);
         int ThreadNo = Integer.parseInt(args[0]);
         System.out.println(ThreadNo);
@@ -32,7 +33,6 @@ public class WebCrawler {
         for(int i = 0; i < ThreadNo; i++) t[i].join();
         long time = System.currentTimeMillis() - start;
         System.out.printf("Time taken = " + time + " ms\n\n");
-        crawler.writeToFile("webPages.txt");
         System.out.println("\n**Done** Visited " + crawler.getPagesVisitedLength() + " web page(s)");
 
     }
@@ -54,6 +54,7 @@ class CrawlerRunnable implements Runnable {
 }
 
 class Crawler {
+    private IndexerDbAdapter adapter;
     private static final int MAX_PAGES = 5000;
     private ConcurrentHashMap pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
@@ -61,6 +62,8 @@ class Crawler {
     public Crawler(Set<String> seedPages) {
         this.pagesVisited = new ConcurrentHashMap();
         this.pagesToVisit = new LinkedBlockingQueue<String>();
+        this.adapter=new IndexerDbAdapter();
+        this.adapter.open();
         for (String page : seedPages) {
             this.pagesToVisit.offer(page);
         }
@@ -107,9 +110,11 @@ class Crawler {
                 + url + " \nFound (" + pageLinks.size() + ") link(s)");
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         // Add links to the queue
+        this.adapter.addURL(url, null);
         for (Element link : pageLinks) {
             String page = link.absUrl("href");
             this.pagesToVisit.offer(page);
+            this.adapter.addLink(url, page);
         }
     }
 

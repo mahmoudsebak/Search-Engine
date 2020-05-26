@@ -12,6 +12,8 @@ import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
 
+import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.Adapter;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -19,7 +21,6 @@ import org.jsoup.nodes.Document;
  * This class handles Parsing HTML files and perform pre processing on words
  **/
 public class WordsExtractionProcess {
-
     /**
      * Pair of Strings class
      */
@@ -38,7 +39,7 @@ public class WordsExtractionProcess {
         }
     }
 
-    public static ArrayList<String>stoppingWordsList;
+    public static HashSet<String>stoppingWordsList;
 
     // for ranking purposes
     private static ArrayList<Double>tagScores;
@@ -51,16 +52,19 @@ public class WordsExtractionProcess {
     public static final double h5_score = 1.2;
     public static final double restOfTags_score = 1;
     public static final int Iterations = 10;
-    public static final String extensions_file = "extensions";
+    public static final String extensions_file = "src/main/java/extensions.txt";
     public static final double maxDistance = 12000.0;
     public static final int first_date = 1990;
     public static final int current_date = 2020;
 
-    public static void main(String[] args) {
-        stoppingWordsList=new ArrayList<String>();
+    public static void main(String[] args) throws InterruptedException {
+        stoppingWordsList=new HashSet<String>();
+        IndexerDbAdapter adapter = new IndexerDbAdapter();
+        adapter.open();
 
         //for ranking process
         tagScores = new ArrayList<Double>();
+        tagScores.add(title_score);
         tagScores.add(h1_score);
         tagScores.add(h2_score);
         tagScores.add(h3_score);
@@ -70,25 +74,29 @@ public class WordsExtractionProcess {
         tagScores.add(restOfTags_score);
         tagScores.add(restOfTags_score);
         tagScores.add(restOfTags_score);
+        tagScores.add(restOfTags_score);
         extensionsDistance = new HashMap<String,Double>();
         readExtensions();
-
-        loadStoppingWords("/home/mohamed/Downloads/apt/Search-Engine/app/src/main/java/com/example/searchStoppingWords");
-
-        String url = "https://www.wikihow.com/Find-the-Publication-Date-of-a-Website";
-        loadStoppingWords("StoppingWords.txt");
-        ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
-        ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
-        listOfWords.remove(listOfWords.size()-1);
-        Integer date = Integer.parseInt(metaData.get(0));
-        double date_score = (date-first_date)/(current_date-first_date);
-        Integer total_words = Integer.parseInt(metaData.get(1));
-        for (ArrayList<String> listOfWord : listOfWords) {
-            for (String s : listOfWord) {
-                System.out.println(s);
+        loadStoppingWords("src/main/java/StoppingWords.txt");
+        while(true){
+            String url = adapter.getUnindexedURL();
+            if(url==null)
+                break;
+            ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
+            ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
+            listOfWords.remove(listOfWords.size()-1);
+            Integer date = Integer.parseInt(metaData.get(0));
+            double date_score = (date-first_date)/(current_date-first_date);
+            Integer total_words = Integer.parseInt(metaData.get(1));
+            HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url);
+            for(HashMap.Entry<String,Double> entry : wordScore.entrySet()){
+                adapter.addWord(entry.getKey(), url,entry.getValue()/total_words);
             }
+            adapter.addURL(url, "content");
         }
-        HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url,total_words);
+        adapter.close();
+        
+        
 
     }
     // Ranking functions
@@ -119,10 +127,9 @@ public class WordsExtractionProcess {
      * this function loops through the tags and calculate each word's score
      * @param listOfWords: all tags with their text
      * @param url: the processed url
-     * @param total_words: total number of words in the processed url
      * @return return map of words score in the processed document(url)
      */
-    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords,String url,Integer total_words)
+    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords,String url)
     {
         HashMap<String,Double> wordScore = new HashMap<String, Double>();
         int idx = 0;
@@ -219,44 +226,49 @@ public class WordsExtractionProcess {
         String header1 ="",header2="",header3="",header4="",header5="",header6="";
         String paragraph="";
         String span="";
-        String body="";
+        String list="";
+        String tableRow="";
         int totalNumberOfWords=0;
         try {
             doc = Jsoup.connect(url).get();
             title = doc.title();
             totalNumberOfWords+=SplitStrings(title).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(title),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(title))));
 
             header1=doc.body().getElementsByTag("h1").text();
             totalNumberOfWords+=SplitStrings(header1).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header1),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header1))));
             header2=doc.body().getElementsByTag("h2").text();
             totalNumberOfWords+=SplitStrings(header2).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header2),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header2))));
             header3=doc.body().getElementsByTag("h3").text();
             totalNumberOfWords+=SplitStrings(header3).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header3),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header3))));
             header4=doc.body().getElementsByTag("h4").text();
             totalNumberOfWords+=SplitStrings(header4).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header4),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header4))));
             header5=doc.body().getElementsByTag("h5").text();
             totalNumberOfWords+=SplitStrings(header5).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header5),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header5))));
             header6=doc.body().getElementsByTag("h6").text();
             totalNumberOfWords+=SplitStrings(header6).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header6),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header6))));
 
             paragraph=doc.body().getElementsByTag("p").text();
             totalNumberOfWords+=SplitStrings(paragraph).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(paragraph),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(paragraph))));
 
             span=doc.body().getElementsByTag("span").text();
             totalNumberOfWords+=SplitStrings(span).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(span),stoppingWordsList)));
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(span))));
 
-            body=doc.body().getElementsByTag("body").text();
-            totalNumberOfWords+=SplitStrings(body).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(body),stoppingWordsList)));
+            list=doc.body().getElementsByTag("li").text();
+            totalNumberOfWords+=SplitStrings(list).size();
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(list))));
+
+            tableRow=doc.body().getElementsByTag("tr").text();
+            totalNumberOfWords+=SplitStrings(tableRow).size();
+            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(tableRow))));
 
             String lastModified=LastModified(url);
             String totalNumberOfWordInDoc=Integer.toString(totalNumberOfWords);
@@ -352,20 +364,17 @@ public class WordsExtractionProcess {
     /**
      * This function removes Stopping words from given array list
      **/
-    public static ArrayList<String> RemovingStoppingWords(ArrayList<String> listOfWords, ArrayList<String> listOfStoppingWords) {
+    public static ArrayList<String> RemovingStoppingWords(ArrayList<String> listOfWords) {
 
         for(int i=0;i<listOfWords.size();i++)
             listOfWords.set(i,RemoveUnrelated(listOfWords.get(i)));
 
+        ArrayList<String>filteredWords=new ArrayList<>();    
         for(int i=0;i<listOfWords.size();i++){
-            for (String listOfStoppingWord : listOfStoppingWords) {
-                if (listOfWords.get(i).equals(listOfStoppingWord)) {
-                    listOfWords.remove(i);
-                    break;
-                }
-            }
+            if(!stoppingWordsList.contains(listOfWords.get(i)))
+                filteredWords.add(listOfWords.get(i));
         }
-        return listOfWords;
+        return filteredWords;
     }
     /**
      * This function apply Stemming algorithm on array list of words
