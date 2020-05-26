@@ -341,7 +341,7 @@ public class WordsExtractionProcess {
      * This function split given string and return array list of split strings
      **/
     public static ArrayList<String> SplitStrings(String sentence){
-        return new ArrayList<>(Arrays.asList(sentence.split(" ")));
+        return new ArrayList<>(Arrays.asList(sentence.toLowerCase().split(" ")));
     }
     /**
      * This function take a path of file that contain list os stopping words to be removed
@@ -369,10 +369,10 @@ public class WordsExtractionProcess {
         for(int i=0;i<listOfWords.size();i++)
             listOfWords.set(i,RemoveUnrelated(listOfWords.get(i)));
 
-        ArrayList<String>filteredWords=new ArrayList<>();    
-        for(int i=0;i<listOfWords.size();i++){
-            if(!stoppingWordsList.contains(listOfWords.get(i)))
-                filteredWords.add(listOfWords.get(i));
+        ArrayList<String>filteredWords=new ArrayList<>();
+        for (String listOfWord : listOfWords) {
+            if (listOfWord.length()!=0 &&(!stoppingWordsList.contains(listOfWord)))
+                filteredWords.add(listOfWord);
         }
         return filteredWords;
     }
