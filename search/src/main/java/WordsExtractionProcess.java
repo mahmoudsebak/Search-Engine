@@ -341,7 +341,7 @@ public class WordsExtractionProcess {
      * This function split given string and return array list of split strings
      **/
     public static ArrayList<String> SplitStrings(String sentence){
-        return new ArrayList<>(Arrays.asList(sentence.split(" ")));
+        return new ArrayList<>(Arrays.asList(sentence.toLowerCase().split(" ")));
     }
     /**
      * This function take a path of file that contain list os stopping words to be removed
