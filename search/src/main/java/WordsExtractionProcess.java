@@ -8,12 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
-
-import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.Adapter;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -42,8 +38,12 @@ public class WordsExtractionProcess {
     public static final int first_date = 1990;
     public static final int current_date = 2020;
 
+    static {
+        stoppingWordsList = new HashSet<>();
+        loadStoppingWords("src/main/java/StoppingWords.txt");
+    }
+    
     public static void main(String[] args) throws InterruptedException {
-        stoppingWordsList=new HashSet<String>();
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
 
@@ -62,7 +62,7 @@ public class WordsExtractionProcess {
         tagScores.add(restOfTags_score);
         extensionsDistance = new HashMap<String,Double>();
         readExtensions();
-        loadStoppingWords("src/main/java/StoppingWords.txt");
+        
         while(true){
             String url = adapter.getUnindexedURL();
             if(url==null)
