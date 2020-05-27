@@ -19,26 +19,12 @@ public class QueryServlet extends HttpServlet {
 			throws ServletException, IOException {
 		String query = request.getParameter("query");
 		int page = Integer.parseInt(request.getParameter("page"));
-		ArrayList<HashMap<String, String>> result = null;
-		IndexerDbAdapter dbAdapter = new IndexerDbAdapter();
 		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		Gson gson = new Gson();
-		
-		dbAdapter.open();
 
-		// phrase matching
-		if (query.startsWith("\"") && query.endsWith("\"")) {
-			result = dbAdapter.queryPhrase(query.substring(1, query.length()-1), 10, page);
-		}
-		else {
-			String[] words = query.split(" ");
-			result = dbAdapter.queryWords(words, 10, page);
-
-		}
-
-		dbAdapter.close();
+		ArrayList<HashMap<String, String>> result = QueryProcessor.ProcessQuery(query,page);
 		
 		HashMap<String, Object> res = new HashMap<>();
 		res.put("result", result);
