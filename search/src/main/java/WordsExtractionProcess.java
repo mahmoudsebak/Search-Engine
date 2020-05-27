@@ -305,10 +305,10 @@ public class WordsExtractionProcess {
         String date=connection.getHeaderField("Last-Modified");
         ArrayList<String>dateArrayList=new ArrayList<>();
         if(date==null)
-            return "1990";
+            return "1 jan 1990";
         else{
             dateArrayList=SplitStrings(date);
-            return dateArrayList.get(3);
+            return dateArrayList.get(1)+dateArrayList.get(2)+dateArrayList.get(3);
         }
     }
     /**
