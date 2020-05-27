@@ -158,20 +158,24 @@ public class IndexerDbAdapter {
 
     /**
      * add url to the database
+     * 
      * @param url the url to be added to database
+     * @return whether the url is added successfully
      */
-    public void addURL(String url) {
+    public boolean addURL(String url) {
         String sql = String.format("INSERT INTO %s(%s) VALUES(?)", TABLE_URLS_NAME, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.executeUpdate();
         } catch (SQLException e) {
-            e.printStackTrace();
+            return false;
         }
+        return true;
     }
 
     /**
      * change the crawling date of a url
+     * 
      * @param url the url to change its crawled_date
      */
     public void crawlURL(String url) {
@@ -237,21 +241,39 @@ public class IndexerDbAdapter {
 
     /**
      * update a url
-     * @param url the url to be updated
-     * @param content  the full plain text of the url without tags
-     * @param pageRank the rank of the url (used in page ranking)
-     * @param date_score the date score of the url (recent pages are favored to old pages)
-     * @param geo_score the geographic location score of the url
+     * 
+     * @param url        the url to be updated
+     * @param content    the full plain text of the url without tags
+     * @param date_score the date score of the url (recent pages are favored to old
+     *                   pages)
+     * @param geo_score  the geographic location score of the url
      */
-    public void updateURL(String url, String content, double pageRank, double date_score, double geo_score) {
-        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ?, %s = true WHERE %s = ?", TABLE_URLS_NAME,
-                COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE, COL_INDEXED, COL_URL);
+    public void updateURL(String url, String content, double date_score, double geo_score) {
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = true WHERE %s = ?", TABLE_URLS_NAME,
+                COL_CONTENT, COL_DATE_SCORE, COL_GEO_SCORE, COL_INDEXED, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, content);
-            ps.setDouble(2, pageRank);
-            ps.setDouble(3, date_score);
-            ps.setDouble(4, geo_score);
-            ps.setString(5, url);
+            ps.setDouble(2, date_score);
+            ps.setDouble(3, geo_score);
+            ps.setString(4, url);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * update a url
+     * 
+     * @param url        the url to be updated
+     * @param pageRank   the rank of the url (used in page ranking)
+     */
+    public void updateURL(String url, double page_rank) {
+        String sql = String.format("UPDATE %s set %s = ? WHERE %s = ?", TABLE_URLS_NAME,
+                COL_PAGE_RANK, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setDouble(1, page_rank);
+            ps.setString(2, url);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -262,7 +284,8 @@ public class IndexerDbAdapter {
      * @return first un-indexed URL
      */
     public String getUnindexedURL() {
-        String sql = String.format("SELECT %s FROM %s WHERE %s IS false LIMIT 1", COL_URL, TABLE_URLS_NAME, COL_INDEXED);
+        String sql = String.format("SELECT %s FROM %s WHERE %s IS false LIMIT 1", COL_URL, TABLE_URLS_NAME,
+                COL_INDEXED);
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(sql);
             if (rs.next())

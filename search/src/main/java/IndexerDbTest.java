@@ -8,10 +8,10 @@ public class IndexerDbTest {
         IndexerDbAdapter dbAdapter = new IndexerDbAdapter();
         dbAdapter.open();
         dbAdapter.addURL("https://codeforces.com/");
-        dbAdapter.updateURL("https://codeforces.com/", "a very long document related to competitive programming", .033, .05, .001);
+        dbAdapter.updateURL("https://codeforces.com/", "a very long document related to competitive programming", .05, .001);
         dbAdapter.addURL("https://www.geeksforgeeks.org/");
         dbAdapter.addURL("https://www.youtube.com/");
-        dbAdapter.updateURL("https://www.youtube.com/", null, 0.1, 0.2, 0.3);
+        dbAdapter.updateURL("https://www.youtube.com/", null, 0.2, 0.3);
         dbAdapter.addLink("https://www.geeksforgeeks.org/", "https://codeforces.com/");
         dbAdapter.addWord("programming", "https://www.geeksforgeeks.org/", 0.4);
         dbAdapter.addWord("programming", "https://codeforces.com/", 0.4);
@@ -46,7 +46,7 @@ public class IndexerDbTest {
 
         System.out.println(dbAdapter.getURLsToBeRecrawled());
         System.out.println();
-        
+
         dbAdapter.close();
     }
 }
