@@ -8,12 +8,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.Scanner;
 import java.util.Set;
-
-import com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.Adapter;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
@@ -24,41 +20,30 @@ public class WordsExtractionProcess {
     /**
      * Pair of Strings class
      */
-    public class Pair
-    {
-        public String first,second;
-        public Pair()
-        {
-            first = "";
-            second = "";
-        }
-        public Pair(String a,String b)
-        {
-            first = a;
-            second = b;
-        }
-    }
 
     public static HashSet<String>stoppingWordsList;
 
     // for ranking purposes
     private static ArrayList<Double>tagScores;
     private static HashMap<String,Double> extensionsDistance;
-    public static final double title_score = 3;
-    public static final double h1_score = 2;
-    public static final double h2_score = 1.8;
-    public static final double h3_score = 1.6;
-    public static final double h4_score = 1.4;
+    public static final double title_score = 8;
+    public static final double h1_score = 3;
+    public static final double h2_score = 2.5;
+    public static final double h3_score = 2;
+    public static final double h4_score = 1.5;
     public static final double h5_score = 1.2;
     public static final double restOfTags_score = 1;
-    public static final int Iterations = 10;
     public static final String extensions_file = "src/main/java/extensions.txt";
     public static final double maxDistance = 12000.0;
     public static final int first_date = 1990;
     public static final int current_date = 2020;
 
+    static {
+        stoppingWordsList = new HashSet<>();
+        loadStoppingWords("src/main/java/StoppingWords.txt");
+    }
+    
     public static void main(String[] args) throws InterruptedException {
-        stoppingWordsList=new HashSet<String>();
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
 
@@ -77,7 +62,7 @@ public class WordsExtractionProcess {
         tagScores.add(restOfTags_score);
         extensionsDistance = new HashMap<String,Double>();
         readExtensions();
-        loadStoppingWords("src/main/java/StoppingWords.txt");
+        
         while(true){
             String url = adapter.getUnindexedURL();
             if(url==null)
@@ -95,9 +80,6 @@ public class WordsExtractionProcess {
             adapter.addURL(url, "content");
         }
         adapter.close();
-        
-        
-
     }
     // Ranking functions
 
@@ -159,58 +141,52 @@ public class WordsExtractionProcess {
     }
 
     /**
-     *
-     * @param connections: list of pairs <src url,dst url>
-     * @return map of each url and its pageRank
-     */
-    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair> connections)
-    {
-        HashMap<String,Double> PagesRank = new HashMap<String, Double>();
-        HashMap<String,Integer> outDegree = new HashMap<String, Integer>();
-        HashMap<String,HashSet<String>> Pages = new HashMap<String, HashSet<String>>();
+     * This function used in to parse html without pre processing to be used in phrase searching 
+     **/
+    static ArrayList<String>HTMLPhraseParser(String url){
+        ArrayList<String>listOfStrings=new ArrayList<String>();
 
-        for(int i = 0 ; i < connections.size() ; i++)
-        {
-            if(!Pages.containsKey(connections.get(i).second))
-                Pages.put(connections.get(i).second,new HashSet<String>());
-            else
-            {
-                HashSet<String>temp = Pages.get(connections.get(i).second);
-                temp.add(connections.get(i).first);
-                Pages.put(connections.get(i).second,temp);
-            }
-            PagesRank.put(connections.get(i).first,1.0);
-            PagesRank.put(connections.get(i).second,1.0);
-            if(outDegree.containsKey(connections.get(i).first))
-                outDegree.put(connections.get(i).first,outDegree.get(connections.get(i).first)+1);
-            else
-                outDegree.put(connections.get(i).first,1);
+        // HTML Document
+        Document doc;
+
+        String title="";
+        String header1 ="",header2="",header3="",header4="",header5="",header6="";
+        String paragraph="";
+        String span="";
+        String body="";
+        try {
+            doc = Jsoup.connect(url).get();
+            title = doc.title();
+            listOfStrings.add(title);
+
+            header1=doc.body().getElementsByTag("h1").text();
+            listOfStrings.add(header1);
+            header2=doc.body().getElementsByTag("h2").text();
+            listOfStrings.add(header2);
+            header3=doc.body().getElementsByTag("h3").text();
+            listOfStrings.add(header3);
+            header4=doc.body().getElementsByTag("h4").text();
+            listOfStrings.add(header4);
+            header5=doc.body().getElementsByTag("h5").text();
+            listOfStrings.add(header5);
+            header6=doc.body().getElementsByTag("h6").text();
+            listOfStrings.add(header6);
+
+            paragraph=doc.body().getElementsByTag("p").text();
+            listOfStrings.add(paragraph);
+
+            span=doc.body().getElementsByTag("span").text();
+            listOfStrings.add(span);
+
+            body=doc.body().getElementsByTag("body").text();
+            listOfStrings.add(body);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        for(HashMap.Entry entry : PagesRank.entrySet())
-            entry.setValue(1.0/PagesRank.size());
-
-        for(int i = 0 ; i < Iterations ; i++)
-        {
-            for(HashMap.Entry entry : PagesRank.entrySet())
-            {
-                String Page = (String) entry.getKey();
-                double rank = 0;
-                HashSet in_URL = Pages.get(Page);
-                Iterator<String> it = in_URL.iterator();
-                while(it.hasNext())
-                {
-                    String in = it.next();
-                    if(outDegree.containsKey(in) && !in.contentEquals(Page))
-                        rank += (PagesRank.get(in)/outDegree.get(in));
-                }
-                if(rank > 0)
-                    entry.setValue(rank);
-            }
-        }
-        return PagesRank;
+        return listOfStrings;
     }
-
     /**
      * This function takes url and return Array list of Array list of words in each header
      * after apply pre processing on them.
@@ -278,8 +254,6 @@ public class WordsExtractionProcess {
 
             listOfWords.add(metaData);
 
-
-
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -331,10 +305,10 @@ public class WordsExtractionProcess {
         String date=connection.getHeaderField("Last-Modified");
         ArrayList<String>dateArrayList=new ArrayList<>();
         if(date==null)
-            return "1990";
+            return "1 jan 1990";
         else{
             dateArrayList=SplitStrings(date);
-            return dateArrayList.get(3);
+            return dateArrayList.get(1)+dateArrayList.get(2)+dateArrayList.get(3);
         }
     }
     /**
