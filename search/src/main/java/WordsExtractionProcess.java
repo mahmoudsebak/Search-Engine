@@ -90,13 +90,12 @@ public class WordsExtractionProcess {
             ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
             ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
             listOfWords.remove(listOfWords.size()-1);
-            double date_score = CalculateDateScore(metaData.get(0));
             Integer total_words = Integer.parseInt(metaData.get(1));
+            adapter.updateURL(url, "content",0.0, CalculateDateScore(metaData.get(0)), CalculateGeographicLocationScore(url));
             HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url);
             for(HashMap.Entry<String,Double> entry : wordScore.entrySet()){
                 adapter.addWord(entry.getKey(), url,entry.getValue()/total_words);
             }
-            adapter.addURL(url);
         }
         adapter.close();
     }
