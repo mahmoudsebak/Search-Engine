@@ -7,9 +7,10 @@ public class IndexerDbTest {
     public static void main(String[] args) throws Exception {
         IndexerDbAdapter dbAdapter = new IndexerDbAdapter();
         dbAdapter.open();
-        dbAdapter.addURL("https://codeforces.com/", "a very long document related to competitive programming");
-        dbAdapter.addURL("https://www.geeksforgeeks.org/", "a very long document related to programming in general");
-        dbAdapter.addURL("https://www.youtube.com/", null);
+        dbAdapter.addURL("https://codeforces.com/");
+        dbAdapter.updateURL("https://codeforces.com/", "a very long document related to competitive programming", .033, .05, .001);
+        dbAdapter.addURL("https://www.geeksforgeeks.org/");
+        dbAdapter.addURL("https://www.youtube.com/");
         dbAdapter.updateURL("https://www.youtube.com/", null, 0.1, 0.2, 0.3);
         dbAdapter.addLink("https://www.geeksforgeeks.org/", "https://codeforces.com/");
         dbAdapter.addWord("programming", "https://www.geeksforgeeks.org/", 0.4);
@@ -31,6 +32,21 @@ public class IndexerDbTest {
         System.out.println();
 
         System.out.println(dbAdapter.getUnindexedURL());
+        System.out.println();
+
+        System.out.println(dbAdapter.getUnCrawledURLs());
+        System.out.println();
+
+        dbAdapter.crawlURL("https://codeforces.com/");
+        System.out.println(dbAdapter.getUnCrawledURLs());
+        System.out.println();
+
+        System.out.println(dbAdapter.getCrawledURLs());
+        System.out.println();
+
+        System.out.println(dbAdapter.getURLsToBeRecrawled());
+        System.out.println();
+        
         dbAdapter.close();
     }
 }

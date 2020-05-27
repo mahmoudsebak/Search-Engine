@@ -18,6 +18,8 @@ public class IndexerDbAdapter {
     public static final String COL_URL = "url";
     // content of the url after removing tags (used in phrase search)
     public static final String COL_CONTENT = "content";
+    public static final String COL_CRAWLED_AT = "crawled_at";
+    public static final String COL_INDEXED = "indexed";
     public static final String COL_PAGE_RANK = "page_rank";
     public static final String COL_DATE_SCORE = "date_score";
     public static final String COL_GEO_SCORE = "geogrphic_score";
@@ -32,9 +34,11 @@ public class IndexerDbAdapter {
     public static final int INDEX_ID = 0;
     public static final int INDEX_URL = INDEX_ID + 1;
     public static final int INDEX_CONTENT = INDEX_ID + 2;
-    public static final int INDEX_PAGE_RANK = INDEX_ID + 3;
-    public static final int INDEX_DATE_SCORE = INDEX_ID + 3;
-    public static final int INDEX_GEO_SCORE = INDEX_ID + 3;
+    public static final int INDEX_CRAWLED_AT = INDEX_ID + 3;
+    public static final int INDEX_INDEXED = INDEX_ID + 4;
+    public static final int INDEX_PAGE_RANK = INDEX_ID + 5;
+    public static final int INDEX_DATE_SCORE = INDEX_ID + 6;
+    public static final int INDEX_GEO_SCORE = INDEX_ID + 7;
 
     public static final int INDEX_WORD = INDEX_ID + 1;
     public static final int INDEX_URL_TABLE2 = INDEX_ID + 2;
@@ -57,9 +61,10 @@ public class IndexerDbAdapter {
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
-            "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256), %s TEXT, %s double,"
-                    + " %s double, %s double);",
-            TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+            "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256),"
+                    + " %s TEXT, %s DATETIME, %s BOOLEAN DEFAULT false, %s double, %s double, %s double);",
+            TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK, COL_DATE_SCORE,
+            COL_GEO_SCORE);
 
     private static final String TABLE1_INDEX_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s);",
             TABLE_URLS_INDEX_NAME, TABLE_URLS_NAME, COL_URL);
@@ -81,8 +86,8 @@ public class IndexerDbAdapter {
             TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE3_INDEX_CREATE = String.format(
-            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME, COL_SRC_URL,
-            COL_DST_URL);
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
+            COL_SRC_URL, COL_DST_URL);
 
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s;", DATABASE_NAME);
 
@@ -151,25 +156,96 @@ public class IndexerDbAdapter {
         return 0;
     }
 
-    // content is the plain text of the url without tags
-    public void addURL(String url, String content) {
-        String sql = String.format(
-                "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s), %s = VALUES(%s)",
-                TABLE_URLS_NAME, COL_URL, COL_CONTENT, COL_PAGE_RANK, COL_CONTENT, COL_CONTENT, COL_PAGE_RANK,
-                COL_PAGE_RANK);
+    /**
+     * add url to the database
+     * @param url the url to be added to database
+     */
+    public void addURL(String url) {
+        String sql = String.format("INSERT INTO %s(%s) VALUES(?)", TABLE_URLS_NAME, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
-            ps.setString(2, content);
-            ps.setDouble(3, 1.0 / (getDocumentsNum() + 1));
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * change the crawling date of a url
+     * @param url the url to change its crawled_date
+     */
+    public void crawlURL(String url) {
+        String sql = String.format("UPDATE %s set %s = now() WHERE %s = ?", TABLE_URLS_NAME, COL_CRAWLED_AT, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, url);
+            ps.executeUpdate();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * @return all URLs to be crawled
+     */
+    public ArrayList<String> getUnCrawledURLs() {
+        String sql = String.format("SELECT %s FROM %s WHERE %s IS NULL", COL_URL, TABLE_URLS_NAME, COL_CRAWLED_AT);
+        ArrayList<String> result = new ArrayList<>();
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
+     * @return all crawled urls
+     */
+    public ArrayList<String> getCrawledURLs() {
+        String sql = String.format("SELECT %s FROM %s WHERE %s IS NOT NULL", COL_URL, TABLE_URLS_NAME, COL_CRAWLED_AT);
+        ArrayList<String> result = new ArrayList<>();
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
+     * @return URLs sorted by most recent urls
+     */
+    public ArrayList<String> getURLsToBeRecrawled() {
+        String sql = String.format("SELECT %s FROM %s ORDER BY %s DESC", COL_URL, TABLE_URLS_NAME, COL_DATE_SCORE);
+        ArrayList<String> result = new ArrayList<>();
+        try (Statement stmt = conn.createStatement()) {
+            ResultSet rs = stmt.executeQuery(sql);
+            while (rs.next()) {
+                result.add(rs.getString(1));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+    /**
+     * update a url
+     * @param url the url to be updated
+     * @param content  the full plain text of the url without tags
+     * @param pageRank the rank of the url (used in page ranking)
+     * @param date_score the date score of the url (recent pages are favored to old pages)
+     * @param geo_score the geographic location score of the url
+     */
     public void updateURL(String url, String content, double pageRank, double date_score, double geo_score) {
-        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME,
-                COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ?, %s = true WHERE %s = ?", TABLE_URLS_NAME,
+                COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE, COL_INDEXED, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, content);
             ps.setDouble(2, pageRank);
@@ -182,8 +258,11 @@ public class IndexerDbAdapter {
         }
     }
 
+    /**
+     * @return first un-indexed URL
+     */
     public String getUnindexedURL() {
-        String sql = String.format("SELECT %s FROM %s WHERE %s IS NULL LIMIT 1", COL_URL, TABLE_URLS_NAME, COL_CONTENT);
+        String sql = String.format("SELECT %s FROM %s WHERE %s IS false LIMIT 1", COL_URL, TABLE_URLS_NAME, COL_INDEXED);
         try (Statement stmt = conn.createStatement()) {
             ResultSet rs = stmt.executeQuery(sql);
             if (rs.next())

@@ -107,7 +107,7 @@ class Crawler {
                 + url + " \nFound (" + pageLinks.size() + ") link(s)");
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         // Add links to the queue
-        this.adapter.addURL(url, null);
+        this.adapter.addURL(url);
         for (Element link : pageLinks) {
             String page = link.absUrl("href");
             this.pagesToVisit.offer(page);
