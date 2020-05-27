@@ -77,7 +77,7 @@ public class WordsExtractionProcess {
             for(HashMap.Entry<String,Double> entry : wordScore.entrySet()){
                 adapter.addWord(entry.getKey(), url,entry.getValue()/total_words);
             }
-            adapter.addURL(url, "content");
+            adapter.addURL(url);
         }
         adapter.close();
     }
