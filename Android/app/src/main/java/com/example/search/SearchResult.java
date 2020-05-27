@@ -53,6 +53,7 @@ public class SearchResult extends AppCompatActivity {
     View footerView;
     ImageButton voiceSearch;
     AutoCompleteTextView editText;
+    int currentPage=1;
 
     CustomAdapterForWebsiteList customAdapterForWebsiteList;
     ListView webSitesListView;
@@ -158,9 +159,10 @@ public class SearchResult extends AppCompatActivity {
 
             //Mimic Real Data
             ArrayList<WebSites>arr=new ArrayList<>();
+            currentPage+=1;
             getResponse(
                     Request.Method.GET,
-                    "http://192.168.1.14:8080/search/query?query="+editText.getText().toString()+"&page="+"1",
+                    "http://192.168.1.14:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage,
                     null,
                     new VolleyCallback() {
                         @Override
@@ -179,13 +181,12 @@ public class SearchResult extends AppCompatActivity {
                                     currentWebsite.setDescription(current.getString("content"));
                                     currentWebsite.setHeader(document.title());
                                     arr.add(currentWebsite);
-
                                 }
                             } catch (JSONException | IOException e) {
                                 e.printStackTrace();
                             }
                         }
-                    },editText.getText().toString(),"1");
+                    },editText.getText().toString(),Integer.toString(currentPage));
             return  arr;
         }
 
