@@ -13,6 +13,9 @@ import java.util.Set;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.time.*;
+import java.time.temporal.ChronoUnit;
+
 /**
  * This class handles Parsing HTML files and perform pre processing on words
  **/
@@ -35,12 +38,29 @@ public class WordsExtractionProcess {
     public static final double restOfTags_score = 1;
     public static final String extensions_file = "src/main/java/extensions.txt";
     public static final double maxDistance = 12000.0;
-    public static final int first_date = 1990;
-    public static final int current_date = 2020;
+    public static LocalDate start_date = null;
+    public static LocalDate current_date = null;
+    public static HashMap<String,Integer> months = null;
 
     static {
         stoppingWordsList = new HashSet<>();
         loadStoppingWords("src/main/java/StoppingWords.txt");
+
+        start_date = LocalDate.of(1990, 1, 1);
+        months = new HashMap<>();
+        months.put("jan", 1);
+        months.put("feb", 2);
+        months.put("mar", 3);
+        months.put("apr", 4);
+        months.put("may", 5);
+        months.put("jun", 6);
+        months.put("jul", 7);
+        months.put("aug", 8);
+        months.put("sep", 9);
+        months.put("sept", 9);
+        months.put("oct", 10);
+        months.put("nov", 11);
+        months.put("dec", 12);
     }
     
     public static void main(String[] args) throws InterruptedException {
@@ -70,8 +90,7 @@ public class WordsExtractionProcess {
             ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
             ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
             listOfWords.remove(listOfWords.size()-1);
-            Integer date = Integer.parseInt(metaData.get(0));
-            double date_score = (date-first_date)/(current_date-first_date);
+            double date_score = CalculateDateScore(metaData.get(0));
             Integer total_words = Integer.parseInt(metaData.get(1));
             HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url);
             for(HashMap.Entry<String,Double> entry : wordScore.entrySet()){
@@ -140,6 +159,20 @@ public class WordsExtractionProcess {
         return 0.0;
     }
 
+    /**
+     * this function calculates date score
+     * @param date: last modified date of url
+     * @return date score
+     */
+    public static double CalculateDateScore(String date)
+    {
+        current_date = LocalDate.now();
+        String [] data = date.split(" ");
+        LocalDate url_date = LocalDate.of(Integer.parseInt(data[2]), months.get(data[1].toLowerCase()), Integer.parseInt(data[0]));
+        long DaysInBetween = ChronoUnit.DAYS.between(start_date, url_date);
+        long TotalDays = ChronoUnit.DAYS.between(start_date, current_date);
+        return (DaysInBetween*1.0/TotalDays);
+    }
     /**
      * This function used in to parse html without pre processing to be used in phrase searching 
      **/
