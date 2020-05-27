@@ -8,6 +8,8 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
+import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
 import android.util.Log;
 import android.view.View;
@@ -33,7 +35,10 @@ import com.android.volley.toolbox.StringRequest;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
+import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -82,6 +87,8 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onSuccessResponse(String response) {
                                 try {
+                                    WebSites currentWebsite=new WebSites();
+                                    ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
                                     // converting response to json object
                                     JSONObject obj = new JSONObject(response);
                                     // if no error in response
@@ -89,16 +96,22 @@ public class MainActivity extends AppCompatActivity {
                                     JSONArray searchResult = obj.getJSONArray("result");
                                     for(int i=0;i<searchResult.length();i++) {
                                         JSONObject current = searchResult.getJSONObject(i);
+                                        currentWebsite.setUrl(current.getString("url"));
+                                        Document document= Jsoup.connect(current.getString("url")).get();
+                                        currentWebsite.setDescription(current.getString("content"));
+                                        currentWebsite.setHeader(document.title());
+                                        webSitesArrayList.add(currentWebsite);
+
                                     }
-                                } catch (JSONException e) {
+                                    Intent i=new Intent(MainActivity.this,SearchResult.class);
+                                    i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
+                                    i.putExtra("TypedWord",editText.getText());
+                                    startActivity(i);
+                                } catch (JSONException | IOException e) {
                                     e.printStackTrace();
                                 }
                             }
                         },editText.getText().toString(),"1");
-                Toast.makeText(v.getContext(),"Enter Search Result",Toast.LENGTH_LONG).show();
-                Intent i=new Intent(MainActivity.this,SearchResult.class);
-                i.putExtra("TypedWord",editText.getText());
-                startActivity(i);
             }
         });
         voiceSearch=(ImageButton) findViewById(R.id.search_voice_btn);

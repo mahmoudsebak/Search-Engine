@@ -343,10 +343,10 @@ public class WordsExtractionProcess {
         for(int i=0;i<listOfWords.size();i++)
             listOfWords.set(i,RemoveUnrelated(listOfWords.get(i)));
 
-        ArrayList<String>filteredWords=new ArrayList<>();    
-        for(int i=0;i<listOfWords.size();i++){
-            if(!stoppingWordsList.contains(listOfWords.get(i)))
-                filteredWords.add(listOfWords.get(i));
+        ArrayList<String>filteredWords=new ArrayList<>();
+        for (String listOfWord : listOfWords) {
+            if (listOfWord.length()!=0 &&(!stoppingWordsList.contains(listOfWord)))
+                filteredWords.add(listOfWord);
         }
         return filteredWords;
     }
