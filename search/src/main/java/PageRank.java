@@ -19,7 +19,7 @@ public class PageRank
             second = b;
         }
     }
-    public static final int Iterations = 10;
+    public static final int Iterations = 5;
 
     /**
      *
@@ -36,41 +36,42 @@ public class PageRank
         {
             if(!Pages.containsKey(connections.get(i).second))
                 Pages.put(connections.get(i).second,new HashSet<String>());
-            else
-            {
-                HashSet<String>temp = Pages.get(connections.get(i).second);
-                temp.add(connections.get(i).first);
-                Pages.put(connections.get(i).second,temp);
-            }
+            
+            HashSet<String>temp = Pages.get(connections.get(i).second);
+            temp.add(connections.get(i).first);
+            Pages.put(connections.get(i).second,temp);
+
             PagesRank.put(connections.get(i).first,1.0);
             PagesRank.put(connections.get(i).second,1.0);
+
             if(outDegree.containsKey(connections.get(i).first))
                 outDegree.put(connections.get(i).first,outDegree.get(connections.get(i).first)+1);
             else
                 outDegree.put(connections.get(i).first,1);
         }
 
-        for(HashMap.Entry entry : PagesRank.entrySet())
+        for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             entry.setValue(1.0/PagesRank.size());
-
+        
         for(int i = 0 ; i < Iterations ; i++)
         {
-            for(HashMap.Entry entry : PagesRank.entrySet())
+            for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             {
-                String Page = (String) entry.getKey();
+                String Page = entry.getKey();
                 double rank = 0;
-                HashSet in_URL = Pages.get(Page);
+                HashSet<String> in_URL = Pages.get(Page);
                 Iterator<String> it = in_URL.iterator();
                 while(it.hasNext())
                 {
                     String in = it.next();
-                    if(outDegree.containsKey(in) && !in.contentEquals(Page))
+                    if(!in.contentEquals(Page))
                         rank += (PagesRank.get(in)/outDegree.get(in));
                 }
                 if(rank > 0)
                     entry.setValue(rank);
             }
         }
+
         return PagesRank;
     }
 }
