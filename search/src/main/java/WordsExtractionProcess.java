@@ -99,6 +99,7 @@ public class WordsExtractionProcess {
             for (HashMap.Entry<String, Double> entry : wordScore.entrySet()) {
                 adapter.addWord(entry.getKey(), url, entry.getValue() / total_words);
             }
+            adapter.setIndexedURL(url, true);
             System.out.println(String.format("Indexed %d page(s)", ++cnt));
         }
         adapter.close();

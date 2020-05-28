@@ -22,7 +22,7 @@ public class IndexerDbAdapter {
     public static final String COL_INDEXED = "indexed";
     public static final String COL_PAGE_RANK = "page_rank";
     public static final String COL_DATE_SCORE = "date_score";
-    public static final String COL_GEO_SCORE = "geogrphic_score";
+    public static final String COL_GEO_SCORE = "geographic_score";
 
     public static final String COL_WORD = "word";
     public static final String COL_SCORE = "score";
@@ -62,7 +62,7 @@ public class IndexerDbAdapter {
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
             "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256),"
-                    + " %s TEXT, %s DATETIME, %s BOOLEAN DEFAULT false, %s double, %s double, %s double);",
+                    + " %s TEXT, %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0, %s double, %s double);",
             TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK, COL_DATE_SCORE,
             COL_GEO_SCORE);
 
@@ -174,12 +174,13 @@ public class IndexerDbAdapter {
     }
 
     /**
-     * change the crawling date of a url
+     * change the crawling date of a url and set indexed attribute to false
      * 
      * @param url the url to change its crawled_date
      */
     public void crawlURL(String url) {
-        String sql = String.format("UPDATE %s set %s = now() WHERE %s = ?", TABLE_URLS_NAME, COL_CRAWLED_AT, COL_URL);
+        String sql = String.format("UPDATE %s set %s = now(), %s = false WHERE %s = ?", TABLE_URLS_NAME, COL_CRAWLED_AT,
+                COL_INDEXED, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.executeUpdate();
@@ -249,8 +250,8 @@ public class IndexerDbAdapter {
      * @param geo_score  the geographic location score of the url
      */
     public void updateURL(String url, String content, double date_score, double geo_score) {
-        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = true WHERE %s = ?", TABLE_URLS_NAME,
-                COL_CONTENT, COL_DATE_SCORE, COL_GEO_SCORE, COL_INDEXED, COL_URL);
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
+                COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, content);
             ps.setDouble(2, date_score);
@@ -265,17 +266,33 @@ public class IndexerDbAdapter {
     /**
      * update a url
      * 
-     * @param url        the url to be updated
-     * @param pageRank   the rank of the url (used in page ranking)
+     * @param url      the url to be updated
+     * @param pageRank the rank of the url (used in page ranking)
      */
     public void updateURL(String url, double page_rank) {
-        String sql = String.format("UPDATE %s set %s = ? WHERE %s = ?", TABLE_URLS_NAME,
-                COL_PAGE_RANK, COL_URL);
+        String sql = String.format("UPDATE %s set %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_PAGE_RANK, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setDouble(1, page_rank);
             ps.setString(2, url);
             ps.executeUpdate();
         } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * set indexed attribute of url
+     * 
+     * @param url     the url to set its indexed attribute
+     * @param indexed whether the url is indexed or not
+     */
+    public void setIndexedURL(String url, boolean indexed) {
+        String sql = String.format("UPDATE %s set %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_INDEXED, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setBoolean(1, indexed);
+            ps.setString(2, url);
+            ps.executeUpdate();
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
@@ -353,12 +370,14 @@ public class IndexerDbAdapter {
     // each page of search results contains `limit` urls
     public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
         String sql = String.format(
-                "SELECT %s, %s FROM %s"
+                "SELECT %s, %s from( SELECT %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
                         + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                         + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
-                        + ") and %s < 0.6 GROUP by %s ORDER BY SUM(%s*idf) DESC LIMIT ?, ?",
-                COL_URL, COL_CONTENT, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD,
-                COL_WORD, TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_SCORE);
+                        + ") and %s < 0.6 GROUP by %s ORDER BY words_score DESC LIMIT ?, ?) as temp2"
+                        + " ORDER by (words_score + %s + %s + %s) DESC",
+                COL_URL, COL_CONTENT, COL_URL, COL_CONTENT, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE,
+                TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD, COL_WORD,
+                TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
