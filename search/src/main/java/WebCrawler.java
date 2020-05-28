@@ -15,13 +15,20 @@ import org.jsoup.select.Elements;
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
-        seedPages.add("https://www.youtube.com/");
-        seedPages.add("https://codeforces.com/");
-        seedPages.add("https://www.geeksforgeeks.org/");
-        seedPages.add("https://ncataggies.com/galleries/cross-country/elon-invite/287");
-        seedPages.add("https://en.wikipedia.org/wiki/Football");
-        Crawler crawler = new Crawler(seedPages);
-        int ThreadNo = Integer.parseInt(args[0]);
+        // seedPages.add("https://www.youtube.com/");
+        // seedPages.add("https://codeforces.com/");
+        // seedPages.add("https://www.geeksforgeeks.org/");
+        // seedPages.add("https://en.wikipedia.org/wiki/Football");
+        seedPages.add("http://odp.org/");
+        IndexerDbAdapter adapter = new IndexerDbAdapter();
+        adapter.open();
+        ArrayList<String> visited = adapter.getCrawledURLs();
+        ArrayList<String> toVisit = adapter.getUnCrawledURLs(); 
+        for (String page : seedPages) 
+            toVisit.add(page);
+        Crawler crawler = new Crawler(toVisit, visited, adapter);
+        // int ThreadNo = Integer.parseInt(args[0]);
+        int ThreadNo = 1;
         System.out.println(ThreadNo);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
@@ -34,7 +41,25 @@ public class WebCrawler {
 
     }
 }
+class Recrawler {
+    public static void main(String[] args) throws InterruptedException {
+        IndexerDbAdapter adapter = new IndexerDbAdapter();
+        adapter.open();
+        ArrayList<String> toBeRecrawled = adapter.getURLsToBeRecrawled();
+        Crawler crawler = new Crawler(toBeRecrawled, null, adapter);
+        int ThreadNo = Integer.parseInt(args[0]);
+        System.out.println(ThreadNo);
+        Thread [] t = new Thread [ThreadNo];
+        for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
+        long start = System.currentTimeMillis();
+        for(int i = 0; i < ThreadNo; i++) t[i].start();
+        for(int i = 0; i < ThreadNo; i++) t[i].join();
+        long time = System.currentTimeMillis() - start;
+        System.out.printf("Time taken = " + time + " ms\n\n");
+        System.out.println("\n**Done** Recrawled " + crawler.getPagesVisitedLength() + " web page(s)");
 
+    }
+}
 class CrawlerRunnable implements Runnable {
     private Crawler crawler;
 
@@ -52,17 +77,19 @@ class CrawlerRunnable implements Runnable {
 
 class Crawler {
     private IndexerDbAdapter adapter;
-    private static final int MAX_PAGES = 5000;
-    private ConcurrentHashMap pagesVisited;
+    private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
+    private static final int MAX_PAGES = 5000;
 
-    public Crawler(Set<String> seedPages) {
-        this.pagesVisited = new ConcurrentHashMap();
+    public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter) {
+        this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
         this.pagesToVisit = new LinkedBlockingQueue<String>();
-        this.adapter=new IndexerDbAdapter();
-        this.adapter.open();
-        for (String page : seedPages) {
+        this.adapter = adapter;
+        for (String page : toVisit) {
             this.pagesToVisit.offer(page);
+        }
+        for (String page : visited) {
+            this.pagesVisited.put(page, true);
         }
     }
 
@@ -91,6 +118,9 @@ class Crawler {
         if (this.pagesVisited.size() == MAX_PAGES) return 1;  // Finsihed
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         this.pagesVisited.put(url, true);
+        this.adapter.addURL(url);
+        this.adapter.crawlURL(url);
+        System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         return 2;
     }
 
@@ -105,16 +135,16 @@ class Crawler {
         Elements pageLinks = htmlPage.select("a[href]");
         System.out.println("Thread " + Thread.currentThread().getId() + " visited page: "
                 + url + " \nFound (" + pageLinks.size() + ") link(s)");
-        System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
+
         // Add links to the queue
-        this.adapter.addURL(url);
         for (Element link : pageLinks) {
             String page = link.absUrl("href");
             this.pagesToVisit.offer(page);
+            this.adapter.addURL(page);
             this.adapter.addLink(url, page);
         }
     }
-
+    
     public boolean robotSafe(URL url)
     {
         String robot = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
