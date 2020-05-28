@@ -74,8 +74,7 @@ public class PageRank
                         if(!in.contentEquals(Page))
                             rank += (temp.get(in)/outDegree.get(in));
                     }
-                    if(rank > 0)
-                        entry.setValue(rank);
+                    entry.setValue(rank);
                 }
             }
         }
