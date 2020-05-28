@@ -27,8 +27,8 @@ public class WebCrawler {
         for (String page : seedPages) 
             toVisit.add(page);
         Crawler crawler = new Crawler(toVisit, visited, adapter);
-        // int ThreadNo = Integer.parseInt(args[0]);
-        int ThreadNo = 1;
+        int ThreadNo = Integer.parseInt(args[0]);
+        // int ThreadNo = 1;
         System.out.println(ThreadNo);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));

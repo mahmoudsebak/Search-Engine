@@ -61,11 +61,6 @@ public class WordsExtractionProcess {
         months.put("oct", 10);
         months.put("nov", 11);
         months.put("dec", 12);
-    }
-    
-    public static void main(String[] args) throws InterruptedException {
-        IndexerDbAdapter adapter = new IndexerDbAdapter();
-        adapter.open();
 
         //for ranking process
         tagScores = new ArrayList<Double>();
@@ -82,20 +77,29 @@ public class WordsExtractionProcess {
         tagScores.add(restOfTags_score);
         extensionsDistance = new HashMap<String,Double>();
         readExtensions();
-        
-        while(true){
+    }
+    
+    public static void main(String[] args) throws InterruptedException {
+        IndexerDbAdapter adapter = new IndexerDbAdapter();
+        adapter.open();
+
+        int cnt = 0;
+        while (true) {
             String url = adapter.getUnindexedURL();
-            if(url==null)
+            if (url == null)
                 break;
-            ArrayList<ArrayList<String>> listOfWords=HTMLParser(url);
-            ArrayList<String> metaData = listOfWords.get(listOfWords.size()-1);
-            listOfWords.remove(listOfWords.size()-1);
-            Integer total_words = Integer.parseInt(metaData.get(1));
-            adapter.updateURL(url, "content", CalculateDateScore(metaData.get(0)), CalculateGeographicLocationScore(url));
-            HashMap<String,Double> wordScore = CalculateWordScore(listOfWords,url);
-            for(HashMap.Entry<String,Double> entry : wordScore.entrySet()){
-                adapter.addWord(entry.getKey(), url,entry.getValue()/total_words);
+            ArrayList<ArrayList<String>> listOfWords = HTMLParser(url);
+            ArrayList<String> metaData = listOfWords.get(listOfWords.size() - 1);
+            listOfWords.remove(listOfWords.size() - 1);
+            Integer total_words = Integer.parseInt(metaData.get(0));
+            System.out.println(String.format("found %d words", total_words));
+            adapter.updateURL(url, HTMLPhraseParser(url), CalculateDateScore(metaData.get(1)),
+                    CalculateGeographicLocationScore(url));
+            HashMap<String, Double> wordScore = CalculateWordScore(listOfWords, url);
+            for (HashMap.Entry<String, Double> entry : wordScore.entrySet()) {
+                adapter.addWord(entry.getKey(), url, entry.getValue() / total_words);
             }
+            System.out.println(String.format("Indexed %d page(s)", ++cnt));
         }
         adapter.close();
     }
@@ -175,49 +179,20 @@ public class WordsExtractionProcess {
     /**
      * This function used in to parse html without pre processing to be used in phrase searching 
      **/
-    static ArrayList<String>HTMLPhraseParser(String url){
-        ArrayList<String>listOfStrings=new ArrayList<String>();
+    static String HTMLPhraseParser(String url){
+        String content = new String();
 
         // HTML Document
         Document doc;
 
-        String title="";
-        String header1 ="",header2="",header3="",header4="",header5="",header6="";
-        String paragraph="";
-        String span="";
-        String body="";
         try {
             doc = Jsoup.connect(url).get();
-            title = doc.title();
-            listOfStrings.add(title);
-
-            header1=doc.body().getElementsByTag("h1").text();
-            listOfStrings.add(header1);
-            header2=doc.body().getElementsByTag("h2").text();
-            listOfStrings.add(header2);
-            header3=doc.body().getElementsByTag("h3").text();
-            listOfStrings.add(header3);
-            header4=doc.body().getElementsByTag("h4").text();
-            listOfStrings.add(header4);
-            header5=doc.body().getElementsByTag("h5").text();
-            listOfStrings.add(header5);
-            header6=doc.body().getElementsByTag("h6").text();
-            listOfStrings.add(header6);
-
-            paragraph=doc.body().getElementsByTag("p").text();
-            listOfStrings.add(paragraph);
-
-            span=doc.body().getElementsByTag("span").text();
-            listOfStrings.add(span);
-
-            body=doc.body().getElementsByTag("body").text();
-            listOfStrings.add(body);
-            
+            content = doc.body().text().toLowerCase();
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        return listOfStrings;
+        return content;
     }
     /**
      * This function takes url and return Array list of Array list of words in each header
