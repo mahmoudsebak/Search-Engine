@@ -52,26 +52,33 @@ public class PageRank
 
         for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             entry.setValue(1.0/PagesRank.size());
-        
+
         for(int i = 0 ; i < Iterations ; i++)
         {
+            HashMap<String,Double> temp = new HashMap<>();
+            for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
+                temp.put(entry.getKey(), entry.getValue());
+
             for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             {
                 String Page = entry.getKey();
-                double rank = 0;
-                HashSet<String> in_URL = Pages.get(Page);
-                Iterator<String> it = in_URL.iterator();
-                while(it.hasNext())
+                System.out.println("processing " + Page + " in iteration " + i);
+                if(Pages.containsKey(Page))
                 {
-                    String in = it.next();
-                    if(!in.contentEquals(Page))
-                        rank += (PagesRank.get(in)/outDegree.get(in));
+                    double rank = 0;
+                    HashSet<String> in_URL = Pages.get(Page);
+                    Iterator<String> it = in_URL.iterator();
+                    while(it.hasNext())
+                    {
+                        String in = it.next();
+                        if(!in.contentEquals(Page))
+                            rank += (temp.get(in)/outDegree.get(in));
+                    }
+                    if(rank > 0)
+                        entry.setValue(rank);
                 }
-                if(rank > 0)
-                    entry.setValue(rank);
             }
         }
-
         return PagesRank;
     }
 }
