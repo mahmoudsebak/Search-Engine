@@ -11,6 +11,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -21,6 +22,15 @@ import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.NoConnectionError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.TimeoutError;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +44,9 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ExecutionException;
 
@@ -82,7 +94,7 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                try {
+                /*try {
                     sitesArrayList.clear();
                     WebSites currentWebsite=new WebSites();
                     // converting response to json object
@@ -106,7 +118,40 @@ public class SearchResult extends AppCompatActivity {
                     endOfResult=true;
                 else{
                     endOfResult=false;
-                }
+                }*/
+                getResponse(
+                        Request.Method.GET,
+                        "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ 1,
+                        null,
+                        new VolleyCallback() {
+                            @Override
+                            public void onSuccessResponse(String response) {
+                                try {
+                                    sitesArrayList.clear();
+                                    WebSites currentWebsite=new WebSites();
+                                    // converting response to json object
+                                    JSONObject obj = new JSONObject(response);
+                                    // if no error in response
+                                    // getting the result from the response
+                                    JSONArray searchResult = obj.getJSONArray("result");
+                                    for(int i=0;i<searchResult.length();i++) {
+                                        JSONObject current = searchResult.getJSONObject(i);
+                                        currentWebsite.setUrl(current.getString("url"));
+                                        currentWebsite.setDescription(current.getString("content"));
+                                        currentWebsite.setHeader("WebSite title");
+                                        sitesArrayList.add(currentWebsite);
+                                    }
+                                    customAdapterForWebsiteList.notifyDataSetChanged();
+                                    if(sitesArrayList.size()==0)
+                                        endOfResult=true;
+                                    else{
+                                        endOfResult=false;
+                                    }
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
+                            }
+                        },editText.getText().toString(),Integer.toString(currentPage));
             }
         });
         voiceSearch=findViewById(R.id.search_voice_btn1);
@@ -189,13 +234,11 @@ public class SearchResult extends AppCompatActivity {
                 for(int i=0;i<searchResult.length();i++) {
                     JSONObject current = searchResult.getJSONObject(i);
                     currentWebsite.setUrl(current.getString("url"));
-                    url=currentWebsite.getUrl();
-                    new JsoupParseTask().execute().get();
                     currentWebsite.setDescription(current.getString("content"));
-                    currentWebsite.setHeader(title);
+                    currentWebsite.setHeader("Website title");
                     arr.add(currentWebsite);
                 }
-            } catch (JSONException | ExecutionException | InterruptedException e) {
+            } catch (JSONException e) {
                 e.printStackTrace();
             }
             if(arr.size()==0)
@@ -255,30 +298,7 @@ public class SearchResult extends AppCompatActivity {
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-    static class JsoupParseTask extends AsyncTask<String, Void, Document> {
 
-        @Override
-        protected Document doInBackground(String... urls) {
-
-            Document doc = null;
-            try {
-                doc = Jsoup.connect(url).get();
-                title = doc.title();
-            }
-            catch (IOException e)
-            {
-                e.printStackTrace();
-            }
-
-            return doc;
-        }
-
-        @Override
-        protected void onPostExecute(Document doc) {
-            // execution of result here
-        }
-
-    }
     public static JSONObject getJSONObjectfromURL(String urlString) throws IOException, JSONException {
         HttpURLConnection urlConnection = null;
         URL url = new URL(urlString);
@@ -302,6 +322,58 @@ public class SearchResult extends AppCompatActivity {
         System.out.println("JSON: " + jsonString);
 
         return new JSONObject(jsonString);
+    }
+    public void getResponse(
+            int method,
+            String url,
+            JSONObject jsonValue,
+            final VolleyCallback callback,final  String query,final String pageNumber) {
+        StringRequest stringRequest =
+                new StringRequest(
+                        Request.Method.GET,
+                        url,
+                        new Response.Listener<String>() {
+                            @Override
+                            public void onResponse(String response) {
+                                callback.onSuccessResponse(response);
+                            }
+                        },
+                        new Response.ErrorListener() {
+                            @Override
+                            public void onErrorResponse(VolleyError error) {
+                                NetworkResponse networkResponse = error.networkResponse;
+                                String errorMessage = "Unknown error";
+                                if (networkResponse == null) {
+                                    if (error.getClass().equals(TimeoutError.class)) {
+                                        errorMessage = "Request timeout";
+                                    } else if (error.getClass().equals(NoConnectionError.class)) {
+                                        errorMessage = "Failed to connect server";
+                                    }
+                                } else {
+                                    String result = new String(networkResponse.data);
+                                    try {
+                                        JSONObject response = new JSONObject(result);
+                                        String status = response.getString("status");
+                                        String message = response.getString("message");
+
+                                        Log.e("Error Status", status);
+                                        Log.e("Error Message", message);
+
+                                        if (networkResponse.statusCode == 404) {
+                                            errorMessage = "Resource not found";
+                                        } else if (networkResponse.statusCode == 500) {
+                                            errorMessage = message+" Something is getting wrong";
+                                        }
+                                    } catch (JSONException e) {
+                                        e.printStackTrace();
+                                    }
+                                }
+                                Log.i("Error", errorMessage);
+                                error.printStackTrace();
+                            }
+                        }) {
+                };
+        VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
 }
 
