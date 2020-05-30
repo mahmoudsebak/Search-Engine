@@ -10,9 +10,7 @@ import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.Parcelable;
 import android.speech.RecognizerIntent;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -22,15 +20,7 @@ import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import com.android.volley.AuthFailureError;
-import com.android.volley.NetworkResponse;
-import com.android.volley.NoConnectionError;
-import com.android.volley.Request;
-import com.android.volley.Response;
-import com.android.volley.TimeoutError;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.StringRequest;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,14 +28,19 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ExecutionException;
 
 public class SearchResult extends AppCompatActivity {
+    public static boolean endOfResult=false;
+    public static String url,title;
     private static final int REQUEST_CODE = 1234;
     boolean loadingMore = false;
     Long startIndex = 0L;
@@ -84,6 +79,36 @@ public class SearchResult extends AppCompatActivity {
         TextView imageResult=findViewById(R.id.image_result);
 
         ImageButton search=findViewById(R.id.imageButton1);
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                try {
+                    sitesArrayList.clear();
+                    WebSites currentWebsite=new WebSites();
+                    // converting response to json object
+                    JSONObject obj = getJSONObjectfromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+1);
+                    // if no error in response
+                    // getting the result from the response
+                    JSONArray searchResult = obj.getJSONArray("result");
+                    for(int i=0;i<searchResult.length();i++) {
+                        JSONObject current = searchResult.getJSONObject(i);
+                        currentWebsite.setUrl(current.getString("url"));
+                        url=currentWebsite.getUrl();
+                        new JsoupParseTask().execute().get();
+                        currentWebsite.setDescription(current.getString("content"));
+                        currentWebsite.setHeader(title);
+                        sitesArrayList.add(currentWebsite);
+                    }
+                } catch (JSONException | ExecutionException | InterruptedException | IOException e) {
+                    e.printStackTrace();
+                }
+                if(sitesArrayList.size()==0)
+                    endOfResult=true;
+                else{
+                    endOfResult=false;
+                }
+            }
+        });
         voiceSearch=findViewById(R.id.search_voice_btn1);
         voiceSearch.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
@@ -92,27 +117,11 @@ public class SearchResult extends AppCompatActivity {
         });
         editText=findViewById(R.id.editText1);
         editText.setText(getIntent().getStringExtra("TypedWord"));
-        /*WebSites webSite=new WebSites();
-        webSite.setHeader("Google");
-        webSite.setDescription("Google is best known search engine that serve billions of people every day");
-        webSite.setUrl("https://www.google.com");
-        sitesArrayList.add(webSite);
-
-        WebSites webSite2=new WebSites();
-        webSite2.setHeader("Youtube");
-        webSite2.setDescription("Youtube is best known search engine for videos");
-        webSite2.setUrl("https://www.youtube.com");
-        sitesArrayList.add(webSite2);
-        for(int i=0;i<7;i++){
-            sitesArrayList.add(webSite);
-        }*/
         customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sitesArrayList);
         webSitesListView.setAdapter(customAdapterForWebsiteList);
         webSitesListView.setOnScrollListener(new AbsListView.OnScrollListener() {
 
             public void onScrollStateChanged(AbsListView view, int scrollState) {
-
-
             }
 
             public void onScroll(AbsListView view, int firstVisibleItem,
@@ -146,47 +155,55 @@ public class SearchResult extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             webSitesListView.addFooterView(footer);
+            if(endOfResult){
+                webSitesListView.removeFooterView(footer);
+                webSitesListView.setEnabled(false);
+                Toast.makeText(getApplicationContext(),"No more result",Toast.LENGTH_LONG).show();
+            }else {
+                webSitesListView.addFooterView(footer);
+                webSitesListView.setEnabled(true);
+            }
             super.onPreExecute();
         }
 
         @Override
         protected List<WebSites> doInBackground(Void... voids) {
 
-            return getNextItems(startIndex, offset);
+            try {
+                return getNextItems(startIndex, offset);
+            } catch (IOException | JSONException e) {
+                e.printStackTrace();
+            }
+            return null;
         }
 
-        private List<WebSites> getNextItems(Long startIndex, Long offset) {
-
-            //Mimic Real Data
+        private List<WebSites> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
             ArrayList<WebSites>arr=new ArrayList<>();
-            currentPage+=1;
-            getResponse(
-                    Request.Method.GET,
-                    "http://192.168.1.14:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage,
-                    null,
-                    new VolleyCallback() {
-                        @Override
-                        public void onSuccessResponse(String response) {
-                            try {
-                                WebSites currentWebsite=new WebSites();
-                                // converting response to json object
-                                JSONObject obj = new JSONObject(response);
-                                // if no error in response
-                                // getting the result from the response
-                                JSONArray searchResult = obj.getJSONArray("result");
-                                for(int i=0;i<searchResult.length();i++) {
-                                    JSONObject current = searchResult.getJSONObject(i);
-                                    currentWebsite.setUrl(current.getString("url"));
-                                    Document document= Jsoup.connect(current.getString("url")).get();
-                                    currentWebsite.setDescription(current.getString("content"));
-                                    currentWebsite.setHeader(document.title());
-                                    arr.add(currentWebsite);
-                                }
-                            } catch (JSONException | IOException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    },editText.getText().toString(),Integer.toString(currentPage));
+            try {
+                WebSites currentWebsite=new WebSites();
+                // converting response to json object
+                JSONObject obj = getJSONObjectfromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
+                // if no error in response
+                // getting the result from the response
+                JSONArray searchResult = obj.getJSONArray("result");
+                for(int i=0;i<searchResult.length();i++) {
+                    JSONObject current = searchResult.getJSONObject(i);
+                    currentWebsite.setUrl(current.getString("url"));
+                    url=currentWebsite.getUrl();
+                    new JsoupParseTask().execute().get();
+                    currentWebsite.setDescription(current.getString("content"));
+                    currentWebsite.setHeader(title);
+                    arr.add(currentWebsite);
+                }
+            } catch (JSONException | ExecutionException | InterruptedException e) {
+                e.printStackTrace();
+            }
+            if(arr.size()==0)
+                endOfResult=true;
+            else{
+                currentPage+=1;
+                endOfResult=false;
+            }
             return  arr;
         }
 
@@ -238,7 +255,102 @@ public class SearchResult extends AppCompatActivity {
         }
         super.onActivityResult(requestCode, resultCode, data);
     }
-    public void getResponse(
+    static class JsoupParseTask extends AsyncTask<String, Void, Document> {
+
+        @Override
+        protected Document doInBackground(String... urls) {
+
+            Document doc = null;
+            try {
+                doc = Jsoup.connect(url).get();
+                title = doc.title();
+            }
+            catch (IOException e)
+            {
+                e.printStackTrace();
+            }
+
+            return doc;
+        }
+
+        @Override
+        protected void onPostExecute(Document doc) {
+            // execution of result here
+        }
+
+    }
+    public static JSONObject getJSONObjectfromURL(String urlString) throws IOException, JSONException {
+        HttpURLConnection urlConnection = null;
+        URL url = new URL(urlString);
+        urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setRequestMethod("GET");
+        urlConnection.setReadTimeout(10000 /* milliseconds */ );
+        urlConnection.setConnectTimeout(15000 /* milliseconds */ );
+        urlConnection.setDoOutput(true);
+        urlConnection.connect();
+
+        BufferedReader br = new BufferedReader(new InputStreamReader(url.openStream()));
+        StringBuilder sb = new StringBuilder();
+
+        String line;
+        while ((line = br.readLine()) != null) {
+            sb.append(line + "\n");
+        }
+        br.close();
+
+        String jsonString = sb.toString();
+        System.out.println("JSON: " + jsonString);
+
+        return new JSONObject(jsonString);
+    }
+}
+
+            /*getResponse(
+                    Request.Method.GET,
+                    "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage,
+                    null,
+                    new VolleyCallback() {
+                        @Override
+                        public void onSuccessResponse(String response) {
+                            try {
+                                WebSites currentWebsite=new WebSites();
+                                // converting response to json object
+                                JSONObject obj = new JSONObject(response);
+                                // if no error in response
+                                // getting the result from the response
+                                JSONArray searchResult = obj.getJSONArray("result");
+                                for(int i=0;i<searchResult.length();i++) {
+                                    JSONObject current = searchResult.getJSONObject(i);
+                                    currentWebsite.setUrl(current.getString("url"));
+                                    url=currentWebsite.getUrl();
+                                    new JsoupParseTask().execute().get();
+                                    currentWebsite.setDescription(current.getString("content"));
+                                    currentWebsite.setHeader(title);
+                                    arr.add(currentWebsite);
+                                }
+                            } catch (JSONException | ExecutionException | InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    },editText.getText().toString(),Integer.toString(currentPage));*/
+
+            /*        WebSites webSite=new WebSites();
+        webSite.setHeader("Google");
+        webSite.setDescription("Google is best known search engine that serve billions of people every day");
+        webSite.setUrl("https://www.google.com");
+        sitesArrayList.add(webSite);
+
+        WebSites webSite2=new WebSites();
+        webSite2.setHeader("Youtube");
+        webSite2.setDescription("Youtube is best known search engine for videos");
+        webSite2.setUrl("https://www.youtube.com");
+        sitesArrayList.add(webSite2);
+        for(int i=0;i<7;i++){
+            sitesArrayList.add(webSite);
+        }*/
+
+        /*
+        public void getResponse(
             int method,
             String url,
             JSONObject jsonValue,
@@ -297,4 +409,4 @@ public class SearchResult extends AppCompatActivity {
                 };
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
-}
+        **/

@@ -6,6 +6,7 @@ import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
@@ -38,16 +39,22 @@ import org.json.JSONObject;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 1234;
+    public static String url,title;
     AutoCompleteTextView editText;
     ImageButton voiceSearch;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -81,7 +88,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 getResponse(
                         Request.Method.GET,
-                        "http://192.168.1.14:8080/search/query?query="+editText.getText().toString()+"&page="+"1",
+                        "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+"1",
                         null,
                         new VolleyCallback() {
                             @Override
@@ -97,9 +104,8 @@ public class MainActivity extends AppCompatActivity {
                                     for(int i=0;i<searchResult.length();i++) {
                                         JSONObject current = searchResult.getJSONObject(i);
                                         currentWebsite.setUrl(current.getString("url"));
-                                        Document document= Jsoup.connect(current.getString("url")).get();
                                         currentWebsite.setDescription(current.getString("content"));
-                                        currentWebsite.setHeader(document.title());
+                                        currentWebsite.setHeader("Title name");
                                         webSitesArrayList.add(currentWebsite);
 
                                     }
@@ -107,7 +113,7 @@ public class MainActivity extends AppCompatActivity {
                                     i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
                                     i.putExtra("TypedWord",editText.getText());
                                     startActivity(i);
-                                } catch (JSONException | IOException e) {
+                                } catch (JSONException e) {
                                     e.printStackTrace();
                                 }
                             }
