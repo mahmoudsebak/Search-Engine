@@ -44,6 +44,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 getResponse(
                         Request.Method.GET,
-                        "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+"1",
+                        ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+"1",
                         null,
                         new VolleyCallback() {
                             @Override
@@ -105,7 +106,7 @@ public class MainActivity extends AppCompatActivity {
                                         JSONObject current = searchResult.getJSONObject(i);
                                         currentWebsite.setUrl(current.getString("url"));
                                         currentWebsite.setDescription(current.getString("content"));
-                                        currentWebsite.setHeader("Title name");
+                                        currentWebsite.setHeader(current.getString("title"));
                                         webSitesArrayList.add(currentWebsite);
                                     }
                                     Intent i=new Intent(MainActivity.this,SearchResult.class);

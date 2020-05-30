@@ -90,7 +90,7 @@ public class SearchResult extends AppCompatActivity {
             public void onClick(View view) {
                 getResponse(
                         Request.Method.GET,
-                        "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ 1,
+                        ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ 1,
                         null,
                         new VolleyCallback() {
                             @Override
@@ -107,7 +107,7 @@ public class SearchResult extends AppCompatActivity {
                                         JSONObject current = searchResult.getJSONObject(i);
                                         currentWebsite.setUrl(current.getString("url"));
                                         currentWebsite.setDescription(current.getString("content"));
-                                        currentWebsite.setHeader("WebSite title");
+                                        currentWebsite.setHeader(current.getString("title"));
                                         sitesArrayList.add(currentWebsite);
                                     }
                                     customAdapterForWebsiteList.notifyDataSetChanged();
@@ -195,7 +195,7 @@ public class SearchResult extends AppCompatActivity {
             ArrayList<WebSites>arr=new ArrayList<>();
             try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
@@ -204,7 +204,7 @@ public class SearchResult extends AppCompatActivity {
                     JSONObject current = searchResult.getJSONObject(i);
                     currentWebsite.setUrl(current.getString("url"));
                     currentWebsite.setDescription(current.getString("content"));
-                    currentWebsite.setHeader("Website title");
+                    currentWebsite.setHeader(current.getString("title"));
                     arr.add(currentWebsite);
                 }
             } catch (JSONException e) {
