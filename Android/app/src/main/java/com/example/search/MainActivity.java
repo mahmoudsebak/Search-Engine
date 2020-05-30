@@ -94,7 +94,6 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onSuccessResponse(String response) {
                                 try {
-                                    WebSites currentWebsite=new WebSites();
                                     ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
                                     // converting response to json object
                                     JSONObject obj = new JSONObject(response);
@@ -102,12 +101,12 @@ public class MainActivity extends AppCompatActivity {
                                     // getting the result from the response
                                     JSONArray searchResult = obj.getJSONArray("result");
                                     for(int i=0;i<searchResult.length();i++) {
+                                        WebSites currentWebsite=new WebSites();
                                         JSONObject current = searchResult.getJSONObject(i);
                                         currentWebsite.setUrl(current.getString("url"));
                                         currentWebsite.setDescription(current.getString("content"));
                                         currentWebsite.setHeader("Title name");
                                         webSitesArrayList.add(currentWebsite);
-
                                     }
                                     Intent i=new Intent(MainActivity.this,SearchResult.class);
                                     i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);

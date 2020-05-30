@@ -23,7 +23,6 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.NoConnectionError;
 import com.android.volley.Request;
@@ -35,8 +34,6 @@ import com.android.volley.toolbox.StringRequest;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -44,11 +41,8 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ExecutionException;
 
 public class SearchResult extends AppCompatActivity {
     public static boolean endOfResult=false;
@@ -94,31 +88,6 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*try {
-                    sitesArrayList.clear();
-                    WebSites currentWebsite=new WebSites();
-                    // converting response to json object
-                    JSONObject obj = getJSONObjectfromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+1);
-                    // if no error in response
-                    // getting the result from the response
-                    JSONArray searchResult = obj.getJSONArray("result");
-                    for(int i=0;i<searchResult.length();i++) {
-                        JSONObject current = searchResult.getJSONObject(i);
-                        currentWebsite.setUrl(current.getString("url"));
-                        url=currentWebsite.getUrl();
-                        new JsoupParseTask().execute().get();
-                        currentWebsite.setDescription(current.getString("content"));
-                        currentWebsite.setHeader(title);
-                        sitesArrayList.add(currentWebsite);
-                    }
-                } catch (JSONException | ExecutionException | InterruptedException | IOException e) {
-                    e.printStackTrace();
-                }
-                if(sitesArrayList.size()==0)
-                    endOfResult=true;
-                else{
-                    endOfResult=false;
-                }*/
                 getResponse(
                         Request.Method.GET,
                         "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ 1,
@@ -128,13 +97,13 @@ public class SearchResult extends AppCompatActivity {
                             public void onSuccessResponse(String response) {
                                 try {
                                     sitesArrayList.clear();
-                                    WebSites currentWebsite=new WebSites();
                                     // converting response to json object
                                     JSONObject obj = new JSONObject(response);
                                     // if no error in response
                                     // getting the result from the response
                                     JSONArray searchResult = obj.getJSONArray("result");
                                     for(int i=0;i<searchResult.length();i++) {
+                                        WebSites currentWebsite=new WebSites();
                                         JSONObject current = searchResult.getJSONObject(i);
                                         currentWebsite.setUrl(current.getString("url"));
                                         currentWebsite.setDescription(current.getString("content"));
@@ -225,13 +194,13 @@ public class SearchResult extends AppCompatActivity {
         private List<WebSites> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
             ArrayList<WebSites>arr=new ArrayList<>();
             try {
-                WebSites currentWebsite=new WebSites();
                 // converting response to json object
-                JSONObject obj = getJSONObjectfromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
+                JSONObject obj = getJSONObjectFromURL("http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
                 for(int i=0;i<searchResult.length();i++) {
+                    WebSites currentWebsite=new WebSites();
                     JSONObject current = searchResult.getJSONObject(i);
                     currentWebsite.setUrl(current.getString("url"));
                     currentWebsite.setDescription(current.getString("content"));
@@ -299,7 +268,7 @@ public class SearchResult extends AppCompatActivity {
         super.onActivityResult(requestCode, resultCode, data);
     }
 
-    public static JSONObject getJSONObjectfromURL(String urlString) throws IOException, JSONException {
+    public static JSONObject getJSONObjectFromURL(String urlString) throws IOException, JSONException {
         HttpURLConnection urlConnection = null;
         URL url = new URL(urlString);
         urlConnection = (HttpURLConnection) url.openConnection();
@@ -376,109 +345,3 @@ public class SearchResult extends AppCompatActivity {
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
 }
-
-            /*getResponse(
-                    Request.Method.GET,
-                    "http://192.168.1.15:8080/search/query?query="+editText.getText().toString()+"&page="+ currentPage,
-                    null,
-                    new VolleyCallback() {
-                        @Override
-                        public void onSuccessResponse(String response) {
-                            try {
-                                WebSites currentWebsite=new WebSites();
-                                // converting response to json object
-                                JSONObject obj = new JSONObject(response);
-                                // if no error in response
-                                // getting the result from the response
-                                JSONArray searchResult = obj.getJSONArray("result");
-                                for(int i=0;i<searchResult.length();i++) {
-                                    JSONObject current = searchResult.getJSONObject(i);
-                                    currentWebsite.setUrl(current.getString("url"));
-                                    url=currentWebsite.getUrl();
-                                    new JsoupParseTask().execute().get();
-                                    currentWebsite.setDescription(current.getString("content"));
-                                    currentWebsite.setHeader(title);
-                                    arr.add(currentWebsite);
-                                }
-                            } catch (JSONException | ExecutionException | InterruptedException e) {
-                                e.printStackTrace();
-                            }
-                        }
-                    },editText.getText().toString(),Integer.toString(currentPage));*/
-
-            /*        WebSites webSite=new WebSites();
-        webSite.setHeader("Google");
-        webSite.setDescription("Google is best known search engine that serve billions of people every day");
-        webSite.setUrl("https://www.google.com");
-        sitesArrayList.add(webSite);
-
-        WebSites webSite2=new WebSites();
-        webSite2.setHeader("Youtube");
-        webSite2.setDescription("Youtube is best known search engine for videos");
-        webSite2.setUrl("https://www.youtube.com");
-        sitesArrayList.add(webSite2);
-        for(int i=0;i<7;i++){
-            sitesArrayList.add(webSite);
-        }*/
-
-        /*
-        public void getResponse(
-            int method,
-            String url,
-            JSONObject jsonValue,
-            final VolleyCallback callback,final  String query,final String pageNumber) {
-        StringRequest stringRequest =
-                new StringRequest(
-                        Request.Method.GET,
-                        url,
-                        new Response.Listener<String>() {
-                            @Override
-                            public void onResponse(String response) {
-                                callback.onSuccessResponse(response);
-                            }
-                        },
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                NetworkResponse networkResponse = error.networkResponse;
-                                String errorMessage = "Unknown error";
-                                if (networkResponse == null) {
-                                    if (error.getClass().equals(TimeoutError.class)) {
-                                        errorMessage = "Request timeout";
-                                    } else if (error.getClass().equals(NoConnectionError.class)) {
-                                        errorMessage = "Failed to connect server";
-                                    }
-                                } else {
-                                    String result = new String(networkResponse.data);
-                                    try {
-                                        JSONObject response = new JSONObject(result);
-                                        String status = response.getString("status");
-                                        String message = response.getString("message");
-
-                                        Log.e("Error Status", status);
-                                        Log.e("Error Message", message);
-
-                                        if (networkResponse.statusCode == 404) {
-                                            errorMessage = "Resource not found";
-                                        } else if (networkResponse.statusCode == 500) {
-                                            errorMessage = message+" Something is getting wrong";
-                                        }
-                                    } catch (JSONException e) {
-                                        e.printStackTrace();
-                                    }
-                                }
-                                Log.i("Error", errorMessage);
-                                error.printStackTrace();
-                            }
-                        }) {
-                    @Override
-                    protected Map<String, String> getParams() throws AuthFailureError {
-                        Map<String, String> params = new HashMap<>();
-                        params.put("query", query);
-                        params.put("page", pageNumber);
-                        return params;
-                    }
-                };
-        VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
-    }
-        **/
