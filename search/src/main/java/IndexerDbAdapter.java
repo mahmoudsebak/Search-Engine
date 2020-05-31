@@ -436,6 +436,31 @@ public class IndexerDbAdapter {
         return null;
     }
 
+    /**
+     * @return all links that are used in page rank
+     */
+    public ArrayList<Pair> fetchAllLinks() {
+        String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL,
+                TABLE_LINKS_NAME);
+        try (Statement stmt = conn.createStatement()) {
+
+            try (ResultSet rs = stmt.executeQuery(sql)) {
+                ArrayList<Pair> ret = new ArrayList<Pair>();
+                while (rs.next()) {
+                    Pair elem = new Pair(rs.getString(1), rs.getString(2));
+                    ret.add(elem);
+                }
+                return ret;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     public void deleteURL(String url) {
         String sql = String.format("DELETE FROM %s WHERE %s = ?", TABLE_URLS_NAME, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
