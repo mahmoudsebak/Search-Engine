@@ -5,22 +5,7 @@ import java.util.Iterator;
 
 public class PageRank
 {
-    public class Pair
-    {
-        public String first,second;
-        public Pair()
-        {
-            first = "";
-            second = "";
-        }
-        public Pair(String a,String b)
-        {
-            first = a;
-            second = b;
-        }
-    }
     public static final int Iterations = 5;
-
     /**
      *
      * @param connections: list of pairs <src url,dst url>
@@ -62,7 +47,6 @@ public class PageRank
             for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             {
                 String Page = entry.getKey();
-                System.out.println("processing " + Page + " in iteration " + i);
                 if(Pages.containsKey(Page))
                 {
                     double rank = 0;
