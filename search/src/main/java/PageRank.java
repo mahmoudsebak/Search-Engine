@@ -5,7 +5,21 @@ import java.util.Iterator;
 
 public class PageRank
 {
-    public static final int Iterations = 5;
+    public static final int Iterations = 10;
+    public static void main(String[] args)
+    {
+        IndexerDbAdapter adapter = new IndexerDbAdapter();
+        adapter.open();
+
+        long startTime = System.nanoTime();
+        ArrayList<Pair> connections = adapter.fetchAllLinks();
+        HashMap<String,Double> ret = CalculatePageRank(connections);
+        for(HashMap.Entry<String,Double> entry : ret.entrySet())
+            adapter.updateURL(entry.getKey(), entry.getValue());
+        long endTime = System.nanoTime();
+        adapter.close();
+        System.out.println("Taken time : "+ ((endTime-startTime)*1.0/1e9));
+    }
     /**
      *
      * @param connections: list of pairs <src url,dst url>
