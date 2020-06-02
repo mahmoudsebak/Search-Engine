@@ -12,6 +12,9 @@ import android.os.Bundle;
 import android.os.Parcelable;
 import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
+import android.text.Editable;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -19,6 +22,7 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
@@ -75,8 +79,8 @@ public class MainActivity extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-
         editText=( AutoCompleteTextView)findViewById(R.id.editText);
+
         String[] COUNTRIES = new String[] {
                 "Belgium", "France", "Italy", "Germany", "Spain"
         };
@@ -87,37 +91,43 @@ public class MainActivity extends AppCompatActivity {
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                getResponse(
-                        Request.Method.GET,
-                        ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+"1",
-                        null,
-                        new VolleyCallback() {
-                            @Override
-                            public void onSuccessResponse(String response) {
-                                try {
-                                    ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
-                                    // converting response to json object
-                                    JSONObject obj = new JSONObject(response);
-                                    // if no error in response
-                                    // getting the result from the response
-                                    JSONArray searchResult = obj.getJSONArray("result");
-                                    for(int i=0;i<searchResult.length();i++) {
-                                        WebSites currentWebsite=new WebSites();
-                                        JSONObject current = searchResult.getJSONObject(i);
-                                        currentWebsite.setUrl(current.getString("url"));
-                                        currentWebsite.setDescription(current.getString("content"));
-                                        currentWebsite.setHeader(current.getString("title"));
-                                        webSitesArrayList.add(currentWebsite);
+                if(checkFieldsForEmptyValues(editText.getText().toString())){
+                    String editTextString=editText.getText().toString();
+                    editTextString=editTextString.replaceAll("\\s+","");
+                    getResponse(
+                            Request.Method.GET,
+                            ULRConnection.url+"/search/query?query="+editTextString+"&page="+"1",
+                            null,
+                            new VolleyCallback() {
+                                @Override
+                                public void onSuccessResponse(String response) throws JSONException {
+                                    JSONObject obj= new JSONObject(response);;
+                                    try {
+                                        ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+                                        // converting response to json object
+                                        // if no error in response
+                                        // getting the result from the response
+                                        JSONArray searchResult = obj.getJSONArray("result");
+                                        for(int i=0;i<searchResult.length();i++) {
+                                            WebSites currentWebsite=new WebSites();
+                                            JSONObject current = searchResult.getJSONObject(i);
+                                            currentWebsite.setUrl(current.getString("url"));
+                                            currentWebsite.setDescription(current.getString("content"));
+                                            currentWebsite.setHeader(current.getString("title"));
+                                            webSitesArrayList.add(currentWebsite);
+                                        }
+                                        Intent i=new Intent(MainActivity.this,SearchResult.class);
+                                        i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
+                                        i.putExtra("TypedWord",editText.getText());
+                                        startActivity(i);
+                                    } catch (JSONException e) {
+                                        if(obj.isNull("result"))
+                                            Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                        e.printStackTrace();
                                     }
-                                    Intent i=new Intent(MainActivity.this,SearchResult.class);
-                                    i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
-                                    i.putExtra("TypedWord",editText.getText());
-                                    startActivity(i);
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
                                 }
-                            }
-                        },editText.getText().toString(),"1");
+                            },editText.getText().toString(),"1");
+                }
             }
         });
         voiceSearch=(ImageButton) findViewById(R.id.search_voice_btn);
@@ -168,7 +178,11 @@ public class MainActivity extends AppCompatActivity {
                         new Response.Listener<String>() {
                             @Override
                             public void onResponse(String response) {
-                                callback.onSuccessResponse(response);
+                                try {
+                                    callback.onSuccessResponse(response);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         },
                         new Response.ErrorListener() {
@@ -214,5 +228,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 };
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
+    }
+    public boolean checkFieldsForEmptyValues(String editBoxText){
+        if (TextUtils.isEmpty(editBoxText)) {
+            editText.setError("Please enter Some thing to search for");
+            editText.requestFocus();
+            return false;
+        }
+        return true;
     }
 }

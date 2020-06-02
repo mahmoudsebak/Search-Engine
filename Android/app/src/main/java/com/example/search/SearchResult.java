@@ -11,6 +11,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -88,39 +89,41 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                getResponse(
-                        Request.Method.GET,
-                        ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ 1,
-                        null,
-                        new VolleyCallback() {
-                            @Override
-                            public void onSuccessResponse(String response) {
-                                try {
-                                    sitesArrayList.clear();
-                                    // converting response to json object
+                if(checkFieldsForEmptyValues(editText.getText().toString())){
+                    String editTextString=editText.getText().toString();
+                    editTextString=editTextString.replaceAll("\\s+","");
+                    getResponse(
+                            Request.Method.GET,
+                            ULRConnection.url+"/search/query?query="+editTextString+"&page="+ 1,
+                            null,
+                            new VolleyCallback() {
+                                @Override
+                                public void onSuccessResponse(String response) throws JSONException {
                                     JSONObject obj = new JSONObject(response);
-                                    // if no error in response
-                                    // getting the result from the response
-                                    JSONArray searchResult = obj.getJSONArray("result");
-                                    for(int i=0;i<searchResult.length();i++) {
-                                        WebSites currentWebsite=new WebSites();
-                                        JSONObject current = searchResult.getJSONObject(i);
-                                        currentWebsite.setUrl(current.getString("url"));
-                                        currentWebsite.setDescription(current.getString("content"));
-                                        currentWebsite.setHeader(current.getString("title"));
-                                        sitesArrayList.add(currentWebsite);
+                                    try {
+                                        sitesArrayList.clear();
+                                        // converting response to json object
+                                        // if no error in response
+                                        // getting the result from the response
+                                        JSONArray searchResult = obj.getJSONArray("result");
+                                        for(int i=0;i<searchResult.length();i++) {
+                                            WebSites currentWebsite=new WebSites();
+                                            JSONObject current = searchResult.getJSONObject(i);
+                                            currentWebsite.setUrl(current.getString("url"));
+                                            currentWebsite.setDescription(current.getString("content"));
+                                            currentWebsite.setHeader(current.getString("title"));
+                                            sitesArrayList.add(currentWebsite);
+                                        }
+                                        customAdapterForWebsiteList.notifyDataSetChanged();
+                                        endOfResult= sitesArrayList.size() == 0;
+                                    } catch (JSONException e) {
+                                        if(obj.isNull("result"))
+                                            Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                        e.printStackTrace();
                                     }
-                                    customAdapterForWebsiteList.notifyDataSetChanged();
-                                    if(sitesArrayList.size()==0)
-                                        endOfResult=true;
-                                    else{
-                                        endOfResult=false;
-                                    }
-                                } catch (JSONException e) {
-                                    e.printStackTrace();
                                 }
-                            }
-                        },editText.getText().toString(),Integer.toString(currentPage));
+                            },editText.getText().toString(),Integer.toString(currentPage));
+                }
             }
         });
         voiceSearch=findViewById(R.id.search_voice_btn1);
@@ -304,7 +307,11 @@ public class SearchResult extends AppCompatActivity {
                         new Response.Listener<String>() {
                             @Override
                             public void onResponse(String response) {
-                                callback.onSuccessResponse(response);
+                                try {
+                                    callback.onSuccessResponse(response);
+                                } catch (JSONException e) {
+                                    e.printStackTrace();
+                                }
                             }
                         },
                         new Response.ErrorListener() {
@@ -343,5 +350,13 @@ public class SearchResult extends AppCompatActivity {
                         }) {
                 };
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
+    }
+    public boolean checkFieldsForEmptyValues(String editBoxText){
+        if (TextUtils.isEmpty(editBoxText)) {
+            editText.setError("Please enter Some thing to search for");
+            editText.requestFocus();
+            return false;
+        }
+        return true;
     }
 }
