@@ -102,9 +102,6 @@ public class WordsExtractionProcess {
         Stemmer s = new Stemmer();
         ArrayList<String>listOfStemmedWords=new ArrayList<String>();
         for (String listOfWord : listOfWords) listOfStemmedWords.add(s.Stemming(listOfWord));
-        Set<String> set = new HashSet<>(listOfStemmedWords);
-        listOfStemmedWords.clear();
-        listOfStemmedWords.addAll(set);
         return  listOfStemmedWords;
     }
 
