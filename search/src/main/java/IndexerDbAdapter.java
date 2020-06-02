@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map.Entry;
 
 public class IndexerDbAdapter {
 
@@ -308,8 +309,53 @@ public class IndexerDbAdapter {
         }
     }
 
+    /**
+     * add all words of a certian url
+     * 
+     * @param wordsScores hashmap of words with their scores
+     * @param url         the url to add its words
+     */
+    public void addWords(HashMap<String, Double> wordsScores, String url) {
+        int len = wordsScores.size();
+        if (len < 1)
+            return;
+
+        StringBuilder placeHolders = new StringBuilder(10 * len);
+        placeHolders.append("(" + makePlaceholders(3) + ")");
+        for (int i = 1; i < len; i++) {
+            placeHolders.append(",(" + makePlaceholders(3) + ")");
+        }
+
+        String sql = String.format(
+                "INSERT INTO %s(%s, %s, %s) VALUES" + placeHolders.toString()
+                        + "ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+                TABLE_WORDS_NAME, COL_WORD, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 1;
+            for (Entry<String, Double> entry : wordsScores.entrySet()) {
+
+                ps.setString(i, entry.getKey());
+                ps.setString(i + 1, url);
+                ps.setDouble(i + 2, entry.getValue());
+                i += 3;
+            }
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     // score is sum of (term frequency of certain tag)*(tag score) of different html
     // tags of a word
+    /**
+     * add a word of a url
+     * 
+     * @param word  the word to add
+     * @param url   the url to add its word
+     * @param score score is sum of (term frequency of certian tag)*(tag score) of
+     *              different htm tags of a word
+     */
     public void addWord(String word, String url, double score) {
         String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
                 TABLE_WORDS_NAME, COL_WORD, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);

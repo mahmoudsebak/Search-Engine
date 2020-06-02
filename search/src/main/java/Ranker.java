@@ -5,6 +5,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.Map.Entry;
 
 public class Ranker {
     
@@ -81,7 +82,7 @@ public class Ranker {
      * @param listOfWords: all tags with their text
      * @return return map of words score in the processed document(url)
      */
-    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords)
+    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords, int totalNumOfWords)
     {
         HashMap<String,Double> wordScore = new HashMap<String, Double>();
         int idx = 0;
@@ -93,6 +94,9 @@ public class Ranker {
                     wordScore.put(s, tagScores.get(idx));
             }
             idx++;
+        }
+        for (Entry<String, Double> entry : wordScore.entrySet()) {
+            entry.setValue(entry.getValue()/totalNumOfWords);
         }
         return wordScore;
     }

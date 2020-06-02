@@ -32,10 +32,8 @@ public class Indexer {
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
     
-                HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords());
-                for (HashMap.Entry<String, Double> entry : wordScore.entrySet()) {
-                    adapter.addWord(entry.getKey(), url, entry.getValue() / total_words);
-                }
+                HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords(), total_words);
+                adapter.addWords(wordScore, url);
                 System.out.println(String.format("Indexed %d page(s)", ++cnt));
                 
             } catch (Exception e) {
