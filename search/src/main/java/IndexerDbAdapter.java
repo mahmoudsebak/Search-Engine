@@ -31,6 +31,8 @@ public class IndexerDbAdapter {
     public static final String COL_SRC_URL = "src_url";
     public static final String COL_DST_URL = "dst_url";
 
+    public static final String COL_IMAGE = "image";
+
     private Connection conn;
     private static final String DATABASE_NAME = "dba_search_indexer";
     private static final String USERNAME = "root";
@@ -42,6 +44,8 @@ public class IndexerDbAdapter {
     private static final String TABLE_WORDS_INDEX_NAME = "tb2_words_url_index";
     private static final String TABLE_LINKS_NAME = "tb3_links";
     private static final String TABLE_LINKS_INDEX_NAME = "tb3_links_index";
+    private static final String TABLE_IMAGES_NAME = "tb3_images";
+    private static final String TABLE_IMAGES_INDEX_NAME = "tb3_images_index";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -74,6 +78,15 @@ public class IndexerDbAdapter {
             "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
             COL_SRC_URL, COL_DST_URL);
 
+    public static final String TABLE4_IMAGES_CREATE = String.format(
+                "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                        + " %s varchar(256), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_URL, TABLE_URLS_NAME, COL_URL);
+    
+    private static final String TABLE4_INDEX_CREATE = String.format(
+                "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
+                COL_URL, COL_IMAGE);
+
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s;", DATABASE_NAME);
 
     public IndexerDbAdapter() {
@@ -92,6 +105,8 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE2_INDEX_CREATE);
             stmt.addBatch(TABLE3_LINKS_CREATE);
             stmt.addBatch(TABLE3_INDEX_CREATE);
+            stmt.addBatch(TABLE4_IMAGES_CREATE);
+            stmt.addBatch(TABLE4_INDEX_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -336,7 +351,18 @@ public class IndexerDbAdapter {
         }
         return true;
     }
-
+    
+    public boolean addImage(String url, String image) {
+        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, url);
+            ps.setString(2, image);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
+    }
     // utility function to create placeholders (?) given a length
     private String makePlaceholders(int len) {
         if (len < 1) {
