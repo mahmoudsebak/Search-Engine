@@ -1,6 +1,5 @@
 package com.example.search;
 
-import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
@@ -8,8 +7,8 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
+import android.os.Parcelable;
 import android.speech.RecognizerIntent;
 import android.text.TextUtils;
 import android.util.Log;
@@ -19,8 +18,8 @@ import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AbsListView;
 import android.widget.AutoCompleteTextView;
+import android.widget.GridView;
 import android.widget.ImageButton;
-import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -43,9 +42,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
-public class SearchResult extends AppCompatActivity {
+public class ImageResultSearch extends AppCompatActivity {
     public static boolean endOfResult=false;
     public static String url,title;
     private static final int REQUEST_CODE = 1234;
@@ -57,16 +55,14 @@ public class SearchResult extends AppCompatActivity {
     AutoCompleteTextView editText;
     int currentPage=1;
 
-    CustomAdapterForWebsiteList customAdapterForWebsiteList;
-    ListView webSitesListView;
-    ArrayList<WebSites> sitesArrayList;
+    CustomAdapterForImageSearch customAdapterForImageSearch;
+    GridView imageGridView;
+    ArrayList<String> sitesArrayList;
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_search_result);
-
+        setContentView(R.layout.activity_image_result_search);
         Window window = this.getWindow();
 
         // clear FLAG_TRANSLUCENT_STATUS flag:
@@ -78,22 +74,21 @@ public class SearchResult extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-        sitesArrayList =new ArrayList<WebSites>();
-        sitesArrayList.addAll(Objects.requireNonNull(getIntent().getParcelableArrayListExtra("searchResult")));
-        webSitesListView=findViewById(R.id.websSteListView);
+        sitesArrayList =new ArrayList<String>();
+        imageGridView =findViewById(R.id.websSteGridView);
         footerView = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.base_list_item_loading_footer, null, false);
-        TextView textResult=findViewById(R.id.text_result);
-        TextView imageResult=findViewById(R.id.image_result);
-        imageResult.setOnClickListener(new View.OnClickListener() {
+        TextView textResult=findViewById(R.id.text_result1);
+        TextView imageResult=findViewById(R.id.image_result1);
+        textResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i=new Intent(getApplicationContext(),ImageResultSearch.class);
-                i.putExtra("toImage",editText.getText());
+                Intent i=new Intent(getApplicationContext(),SearchResult.class);
+                i.putExtra("toText",editText.getText());
                 startActivity(i);
             }
         });
 
-        ImageButton search=findViewById(R.id.imageButton1);
+        ImageButton search=findViewById(R.id.imageButton2);
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -115,14 +110,12 @@ public class SearchResult extends AppCompatActivity {
                                         // getting the result from the response
                                         JSONArray searchResult = obj.getJSONArray("result");
                                         for(int i=0;i<searchResult.length();i++) {
-                                            WebSites currentWebsite=new WebSites();
+                                            String currentImage= "";
                                             JSONObject current = searchResult.getJSONObject(i);
-                                            currentWebsite.setUrl(current.getString("url"));
-                                            currentWebsite.setDescription(current.getString("content"));
-                                            currentWebsite.setHeader(current.getString("title"));
-                                            sitesArrayList.add(currentWebsite);
+                                            currentImage=current.getString("url");
+                                            sitesArrayList.add(currentImage);
                                         }
-                                        customAdapterForWebsiteList.notifyDataSetChanged();
+                                        customAdapterForImageSearch.notifyDataSetChanged();
                                         endOfResult= sitesArrayList.size() == 0;
                                     } catch (JSONException e) {
                                         if(obj.isNull("result"))
@@ -141,10 +134,10 @@ public class SearchResult extends AppCompatActivity {
             }
         });
         editText=findViewById(R.id.editText1);
-        editText.setText(getIntent().getStringExtra("TypedWord"));
-        customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sitesArrayList);
-        webSitesListView.setAdapter(customAdapterForWebsiteList);
-        webSitesListView.setOnScrollListener(new AbsListView.OnScrollListener() {
+        editText.setText(getIntent().getStringExtra("toImage"));
+        customAdapterForImageSearch =new CustomAdapterForImageSearch(this, sitesArrayList);
+        imageGridView.setAdapter(customAdapterForImageSearch);
+        imageGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
 
             public void onScrollStateChanged(AbsListView view, int scrollState) {
             }
@@ -157,8 +150,8 @@ public class SearchResult extends AppCompatActivity {
                     if(!loadingMore)
                     {
                         loadingMore = true;
-                        new LoadMoreItemsTask((Activity) view.getContext()).execute();
-                        webSitesListView.setSelection(firstVisibleItem);
+                        new ImageResultSearch.LoadMoreItemsTask((Activity) view.getContext()).execute();
+                        imageGridView.setSelection(firstVisibleItem);
                     }
 
                 }
@@ -166,7 +159,7 @@ public class SearchResult extends AppCompatActivity {
         });
 
     }
-    private class LoadMoreItemsTask extends AsyncTask<Void, Void, List<WebSites>> {
+    private class LoadMoreItemsTask extends AsyncTask<Void, Void, List<String>> {
 
         private Activity activity;
         private View footer;
@@ -179,21 +172,17 @@ public class SearchResult extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            webSitesListView.addFooterView(footer);
             if(endOfResult){
-                webSitesListView.removeFooterView(footer);
-                webSitesListView.setEnabled(false);
+                imageGridView.setEnabled(false);
                 Toast.makeText(getApplicationContext(),"No more result",Toast.LENGTH_LONG).show();
             }else {
-                webSitesListView.addFooterView(footer);
-                webSitesListView.setEnabled(true);
+                imageGridView.setEnabled(true);
             }
             super.onPreExecute();
         }
 
         @Override
-        protected List<WebSites> doInBackground(Void... voids) {
-
+        protected List<String> doInBackground(Void... voids) {
             try {
                 return getNextItems(startIndex, offset);
             } catch (IOException | JSONException e) {
@@ -202,8 +191,8 @@ public class SearchResult extends AppCompatActivity {
             return null;
         }
 
-        private List<WebSites> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
-            ArrayList<WebSites>arr=new ArrayList<>();
+        private List<String> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
+            ArrayList<String>arr=new ArrayList<>();
             try {
                 // converting response to json object
                 JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
@@ -211,12 +200,10 @@ public class SearchResult extends AppCompatActivity {
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
                 for(int i=0;i<searchResult.length();i++) {
-                    WebSites currentWebsite=new WebSites();
+                    String currentImgURL;
                     JSONObject current = searchResult.getJSONObject(i);
-                    currentWebsite.setUrl(current.getString("url"));
-                    currentWebsite.setDescription(current.getString("content"));
-                    currentWebsite.setHeader(current.getString("title"));
-                    arr.add(currentWebsite);
+                    currentImgURL=current.getString("url");
+                    arr.add(currentImgURL);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -231,10 +218,7 @@ public class SearchResult extends AppCompatActivity {
         }
 
         @Override
-        protected void onPostExecute(List<WebSites> listItems) {
-            if (footer != null) {
-                webSitesListView.removeFooterView(footer);
-            }
+        protected void onPostExecute(List<String> listItems) {
             loadingMore = false;
             if (listItems.size() > 0) {
                 startIndex = startIndex + listItems.size();
@@ -243,10 +227,10 @@ public class SearchResult extends AppCompatActivity {
             super.onPostExecute(listItems);
         }
 
-        private void setItems(List<WebSites> listItems) {
+        private void setItems(List<String> listItems) {
             sitesArrayList.addAll(listItems);
             loadingMore=false;
-            customAdapterForWebsiteList.notifyDataSetChanged();
+            customAdapterForImageSearch.notifyDataSetChanged();
         }
     }
     /**
