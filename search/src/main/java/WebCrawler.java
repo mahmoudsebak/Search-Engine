@@ -12,13 +12,14 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+/**
+ * This class is used to crawl web pages
+ **/
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
-        // seedPages.add("https://www.youtube.com/");
         // seedPages.add("https://codeforces.com/");
         // seedPages.add("https://www.geeksforgeeks.org/");
-        // seedPages.add("https://en.wikipedia.org/wiki/Football");
         seedPages.add("http://odp.org/");
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
@@ -41,6 +42,10 @@ public class WebCrawler {
 
     }
 }
+
+/**
+ * This class is used to recrawl previously crawled pages depending on the date score calculated by the ranker
+ **/
 class Recrawler {
     public static void main(String[] args) throws InterruptedException {
         IndexerDbAdapter adapter = new IndexerDbAdapter();
@@ -92,11 +97,18 @@ class Crawler {
             this.pagesVisited.put(page, true);
         }
     }
-
+    /**
+     * 
+     * @return number of crawled pages
+     */
     public int getPagesVisitedLength() {
         return this.pagesVisited.size();
     }
-
+    /**
+     * This function is used to crawl a certain url following robot rules
+	 *
+     * @return true if the crawler has crawled max number of page, false otherwise
+     */
     public boolean crawl() {
         String url = this.pagesToVisit.poll();
         if (url == null) return false; // There is no pages to visit
@@ -106,16 +118,21 @@ class Crawler {
             System.out.println("Invalid URL: " + url);
             return false;
         }
-        int res = isValid(url);
+        int res = visitURL(url);
         if(res == 2)
             this.getLinks(url);
         else if(res == 1)
             return true;
         return false;
     }
-
-    public synchronized int isValid(String url) {
-        if (this.pagesVisited.size() == MAX_PAGES) return 1;  // Finsihed
+    /**
+     * This function is used to visit a url
+	 *
+	 * @param url: the url to be visited
+     * @return 0 if the url is crawled before, 1 if the max number of urls are added in database and 2 if it is valid to visit the url
+     */
+    public synchronized int visitURL(String url) {
+        if (this.pagesVisited.size() + this.pagesVisited.size() == MAX_PAGES) return 1;  // Finsihed
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         this.pagesVisited.put(url, true);
         this.adapter.addURL(url);
@@ -123,7 +140,11 @@ class Crawler {
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         return 2;
     }
-
+    /**
+     * This function is used to extract link from a url and add them to the database and add links between src and dst urls
+	 *
+	 * @param url: the url to extract links from
+     */
     public void getLinks(String url) {
         Document htmlPage = null;
         try {
@@ -144,7 +165,12 @@ class Crawler {
             this.adapter.addLink(url, page);
         }
     }
-    
+    /**
+     * This function is used to check for robot rules in robots.txt file
+	 *
+	 * @param url: the url to be visited
+	 * @return true if the url is robot safe, false otherwise
+     */
     public boolean robotSafe(URL url)
     {
         String robot = url.getProtocol() + "://" + url.getHost() + "/robots.txt";
