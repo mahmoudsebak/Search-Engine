@@ -112,4 +112,4 @@ local.properties
 ehthumbs.db
 Thumbs.db
 
-Android/app/src/main/java/com/example/search/ULRConnection.java
+app/src/main/java/com/example/search/ULRConnection.java
