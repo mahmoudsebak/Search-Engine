@@ -4,6 +4,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +14,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+
 /**
  * This class is used to crawl web pages
  **/
@@ -27,10 +30,8 @@ public class WebCrawler {
         ArrayList<String> toVisit = adapter.getUnCrawledURLs(); 
         for (String page : seedPages) 
             toVisit.add(page);
-        Crawler crawler = new Crawler(toVisit, visited, adapter);
         int ThreadNo = Integer.parseInt(args[0]);
-        // int ThreadNo = 1;
-        System.out.println(ThreadNo);
+        Crawler crawler = new Crawler(toVisit, visited, adapter);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
         long start = System.currentTimeMillis();
@@ -53,7 +54,6 @@ class Recrawler {
         ArrayList<String> toBeRecrawled = adapter.getURLsToBeRecrawled();
         Crawler crawler = new Crawler(toBeRecrawled, null, adapter);
         int ThreadNo = Integer.parseInt(args[0]);
-        System.out.println(ThreadNo);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
         long start = System.currentTimeMillis();
@@ -65,6 +65,10 @@ class Recrawler {
 
     }
 }
+
+/**
+ * This class is used in threading
+ **/
 class CrawlerRunnable implements Runnable {
     private Crawler crawler;
 
@@ -84,18 +88,25 @@ class Crawler {
     private IndexerDbAdapter adapter;
     private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
-    private static final int MAX_PAGES = 5000;
+    private static final int MAX_PAGES = 10000;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter) {
         this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
         this.pagesToVisit = new LinkedBlockingQueue<String>();
         this.adapter = adapter;
-        for (String page : toVisit) {
-            this.pagesToVisit.offer(page);
+        if(toVisit != null)
+        {
+            for (String page : toVisit) {
+                this.pagesToVisit.offer(page);
+            }
         }
-        for (String page : visited) {
-            this.pagesVisited.put(page, true);
+        if(visited != null)
+        {
+            for (String page : visited) {
+                this.pagesVisited.put(page, true);
+            }
         }
+
     }
     /**
      * 
@@ -104,6 +115,7 @@ class Crawler {
     public int getPagesVisitedLength() {
         return this.pagesVisited.size();
     }
+
     /**
      * This function is used to crawl a certain url following robot rules
 	 *
@@ -125,6 +137,7 @@ class Crawler {
             return true;
         return false;
     }
+
     /**
      * This function is used to visit a url
 	 *
@@ -132,14 +145,20 @@ class Crawler {
      * @return 0 if the url is crawled before, 1 if the max number of urls are added in database and 2 if it is valid to visit the url
      */
     public synchronized int visitURL(String url) {
-        if (this.pagesVisited.size() + this.pagesVisited.size() == MAX_PAGES) return 1;  // Finsihed
+        if (this.pagesVisited.size() + this.pagesToVisit.size() >= MAX_PAGES) return 1;  // Finsihed crawling
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         this.pagesVisited.put(url, true);
+        try {
+            url = this.normalizeUrl(url);
+        } catch (URISyntaxException e) {
+            e.printStackTrace();
+        }
         this.adapter.addURL(url);
         this.adapter.crawlURL(url);
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         return 2;
     }
+    
     /**
      * This function is used to extract link from a url and add them to the database and add links between src and dst urls
 	 *
@@ -158,13 +177,54 @@ class Crawler {
                 + url + " \nFound (" + pageLinks.size() + ") link(s)");
 
         // Add links to the queue
+        int i = 0;
+        int numberOfPages = (int) ((Math.random() * (100 - 50)) + 50);
         for (Element link : pageLinks) {
+            if(i == numberOfPages) break;
             String page = link.absUrl("href");
+            try {
+                page = this.normalizeUrl(page);
+            } catch (URISyntaxException e) {
+                e.printStackTrace();
+            }
             this.pagesToVisit.offer(page);
             this.adapter.addURL(page);
             this.adapter.addLink(url, page);
+            i += 1;
         }
+        
     }
+
+    /**
+     * This function is used to extract link
+	 *
+	 * @param url: the url to be normalized
+     * @return a normalized url
+     */
+    public String normalizeUrl(String url) throws URISyntaxException {
+        if (url == null) {
+            return null;
+        }
+        URI uri = new URI(url);
+        if (!uri.isAbsolute()) {
+            throw new URISyntaxException(url, "Not an absolute URL");
+        }
+        uri = uri.normalize();
+        String path = uri.getPath();
+        if (path != null) {
+            path = path.replaceAll("//*/", "/");
+            if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
+                path = path.substring(0, path.length() - 1);
+            }
+        }
+        String host = uri.getHost();
+        if (host != null && !host.toLowerCase().contains("www.")) {
+            host = "www." + host;
+        }
+        return new URI(uri.getScheme(), uri.getUserInfo(), host, uri.getPort(),
+                path, uri.getQuery(), uri.getFragment()).toString();
+    }
+
     /**
      * This function is used to check for robot rules in robots.txt file
 	 *
@@ -243,6 +303,12 @@ class Crawler {
         }
         return true;
     }
+
+    /**
+     * This function is write the crawled pages ina file
+	 *
+	 * @param filename: name of the file to write in
+     */
     public void writeToFile(String filename) {
         FileWriter writer;
         try {
