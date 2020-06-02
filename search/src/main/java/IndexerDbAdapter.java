@@ -356,12 +356,12 @@ public class IndexerDbAdapter {
     // each page of search results contains `limit` urls
     public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
         String sql = String.format(
-                "SELECT %s, %s, %s from( SELECT %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
+                "SELECT %s, %s, %s from( SELECT %s, %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
                         + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                         + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
                         + ") and %s < 0.6 GROUP by %s ORDER BY words_score DESC LIMIT ?, ?) as temp2"
                         + " ORDER by (words_score + %s + %s + %s) DESC",
-                COL_URL, COL_CONTENT, COL_TITLE, COL_URL, COL_CONTENT, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE,
+                COL_URL, COL_CONTENT, COL_TITLE, COL_URL, COL_CONTENT, COL_TITLE, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE,
                 TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD, COL_WORD,
                 TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
