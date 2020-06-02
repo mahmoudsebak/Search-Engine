@@ -31,15 +31,16 @@ public class WebCrawler {
         for (String page : seedPages) 
             toVisit.add(page);
         int ThreadNo = Integer.parseInt(args[0]);
-        Crawler crawler = new Crawler(toVisit, visited, adapter);
+        Crawler crawler = new Crawler(toVisit, visited, adapter, false);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
         long start = System.currentTimeMillis();
         for(int i = 0; i < ThreadNo; i++) t[i].start();
         for(int i = 0; i < ThreadNo; i++) t[i].join();
         long time = System.currentTimeMillis() - start;
-        System.out.printf("Time taken = " + time + " ms\n\n");
-        System.out.println("\n**Done** Visited " + crawler.getPagesVisitedLength() + " web page(s)");
+        System.out.printf("\nTime taken = " + time + " ms\n");
+        System.out.println("Crawled = " + crawler.getPagesVisitedLength() + " web page(s)\n");
+        System.out.println("ToBeCrawled  =" + crawler.getPagesToVisitLength() + " web page(s)\n");
 
     }
 }
@@ -52,7 +53,7 @@ class Recrawler {
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
         ArrayList<String> toBeRecrawled = adapter.getURLsToBeRecrawled();
-        Crawler crawler = new Crawler(toBeRecrawled, null, adapter);
+        Crawler crawler = new Crawler(toBeRecrawled, null, adapter, true);
         int ThreadNo = Integer.parseInt(args[0]);
         Thread [] t = new Thread [ThreadNo];
         for(int i = 0; i < ThreadNo; i++) t[i] = new Thread(new CrawlerRunnable(crawler));
@@ -60,8 +61,9 @@ class Recrawler {
         for(int i = 0; i < ThreadNo; i++) t[i].start();
         for(int i = 0; i < ThreadNo; i++) t[i].join();
         long time = System.currentTimeMillis() - start;
-        System.out.printf("Time taken = " + time + " ms\n\n");
-        System.out.println("\n**Done** Recrawled " + crawler.getPagesVisitedLength() + " web page(s)");
+        System.out.printf("\nTime taken = " + time + " ms\n");
+        System.out.println("Crawled " + crawler.getPagesVisitedLength() + " web page(s)\n");
+        System.out.println("To Be Crawled " + crawler.getPagesToVisitLength() + " web page(s)\n");
 
     }
 }
@@ -88,11 +90,14 @@ class Crawler {
     private IndexerDbAdapter adapter;
     private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
-    private static final int MAX_PAGES = 10000;
+    private Boolean isRecraler;
+    private static final int MAX_PAGES_TO_BE_CRAWLED = 9000;
+    private static final int MAX_PAGES_TO_BE_RECRAWLED = 10;
 
-    public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter) {
+    public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
         this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
         this.pagesToVisit = new LinkedBlockingQueue<String>();
+        this.isRecraler = isRecrawler;
         this.adapter = adapter;
         if(toVisit != null)
         {
@@ -115,11 +120,18 @@ class Crawler {
     public int getPagesVisitedLength() {
         return this.pagesVisited.size();
     }
+    /**
+     * 
+     * @return number of pages to be visited
+     */
+    public int getPagesToVisitLength() {
+        return this.pagesToVisit.size();
+    }
 
     /**
      * This function is used to crawl a certain url following robot rules
 	 *
-     * @return true if the crawler has crawled max number of page, false otherwise
+     * @return true if the crawler has crawled max number of pages, false otherwise
      */
     public boolean crawl() {
         String url = this.pagesToVisit.poll();
@@ -145,14 +157,16 @@ class Crawler {
      * @return 0 if the url is crawled before, 1 if the max number of urls are added in database and 2 if it is valid to visit the url
      */
     public synchronized int visitURL(String url) {
-        if (this.pagesVisited.size() + this.pagesToVisit.size() >= MAX_PAGES) return 1;  // Finsihed crawling
+        if (!this.isRecraler && this.pagesVisited.size() + this.pagesToVisit.size() >= MAX_PAGES_TO_BE_CRAWLED) return 1;  
+        if (this.isRecraler && this.pagesVisited.size() == MAX_PAGES_TO_BE_RECRAWLED) return 1;  
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
-        this.pagesVisited.put(url, true);
         try {
             url = this.normalizeUrl(url);
         } catch (URISyntaxException e) {
             e.printStackTrace();
+            return 0;
         }
+        this.pagesVisited.put(url, true);
         this.adapter.addURL(url);
         this.adapter.crawlURL(url);
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
@@ -186,6 +200,7 @@ class Crawler {
                 page = this.normalizeUrl(page);
             } catch (URISyntaxException e) {
                 e.printStackTrace();
+                continue;
             }
             this.pagesToVisit.offer(page);
             this.adapter.addURL(page);
