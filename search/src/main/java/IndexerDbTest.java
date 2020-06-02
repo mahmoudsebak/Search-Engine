@@ -16,6 +16,7 @@ public class IndexerDbTest {
         dbAdapter.addWord("programming", "https://www.geeksforgeeks.org/", 0.4);
         dbAdapter.addWord("programming", "https://codeforces.com/", 0.4);
         dbAdapter.addWord("competitive", "https://codeforces.com/", 0.5);
+        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.geeksforgeeks.org/");
 
         dbAdapter.resetPagesRank();
         ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
