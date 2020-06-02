@@ -1,273 +1,24 @@
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Scanner;
 import java.util.Set;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
-import java.time.*;
-import java.time.temporal.ChronoUnit;
 
 /**
  * This class handles Parsing HTML files and perform pre processing on words
  **/
 public class WordsExtractionProcess {
-    /**
-     * Pair of Strings class
-     */
 
     public static HashSet<String>stoppingWordsList;
-
-    // for ranking purposes
-    private static ArrayList<Double>tagScores;
-    private static HashMap<String,Double> extensionsDistance;
-    public static final double title_score = 8;
-    public static final double h1_score = 3;
-    public static final double h2_score = 2.5;
-    public static final double h3_score = 2;
-    public static final double h4_score = 1.5;
-    public static final double h5_score = 1.2;
-    public static final double restOfTags_score = 1;
-    public static final String extensions_file = "src/main/java/extensions.txt";
-    public static final double maxDistance = 12000.0;
-    public static LocalDate start_date = null;
-    public static LocalDate current_date = null;
-    public static HashMap<String,Integer> months = null;
 
     static {
         stoppingWordsList = new HashSet<>();
         loadStoppingWords("src/main/java/StoppingWords.txt");
-
-        start_date = LocalDate.of(1990, 1, 1);
-        months = new HashMap<>();
-        months.put("jan", 1);
-        months.put("feb", 2);
-        months.put("mar", 3);
-        months.put("apr", 4);
-        months.put("may", 5);
-        months.put("jun", 6);
-        months.put("jul", 7);
-        months.put("aug", 8);
-        months.put("sep", 9);
-        months.put("sept", 9);
-        months.put("oct", 10);
-        months.put("nov", 11);
-        months.put("dec", 12);
-
-        //for ranking process
-        tagScores = new ArrayList<Double>();
-        tagScores.add(title_score);
-        tagScores.add(h1_score);
-        tagScores.add(h2_score);
-        tagScores.add(h3_score);
-        tagScores.add(h4_score);
-        tagScores.add(h5_score);
-        tagScores.add(restOfTags_score);
-        tagScores.add(restOfTags_score);
-        tagScores.add(restOfTags_score);
-        tagScores.add(restOfTags_score);
-        tagScores.add(restOfTags_score);
-        extensionsDistance = new HashMap<String,Double>();
-        readExtensions();
     }
     
-    public static void main(String[] args) throws InterruptedException {
-        IndexerDbAdapter adapter = new IndexerDbAdapter();
-        adapter.open();
-
-        int cnt = 0;
-        while (true) {
-            String url = adapter.getUnindexedURL();
-            if (url == null)
-                break;
-            ArrayList<ArrayList<String>> listOfWords = HTMLParser(url);
-            ArrayList<String> metaData = listOfWords.get(listOfWords.size() - 1);
-            listOfWords.remove(listOfWords.size() - 1);
-            Integer total_words = Integer.parseInt(metaData.get(0));
-            System.out.println(String.format("found %d words", total_words));
-            adapter.updateURL(url, HTMLPhraseParser(url), CalculateDateScore(metaData.get(1)),
-                    CalculateGeographicLocationScore(url));
-            HashMap<String, Double> wordScore = CalculateWordScore(listOfWords, url);
-            for (HashMap.Entry<String, Double> entry : wordScore.entrySet()) {
-                adapter.addWord(entry.getKey(), url, entry.getValue() / total_words);
-            }
-            adapter.setIndexedURL(url, true);
-            System.out.println(String.format("Indexed %d page(s)", ++cnt));
-        }
-        adapter.close();
-    }
-    // Ranking functions
-
-    /**
-     * this function reads extensions and stores its distance from egypt
-     */
-    private static void readExtensions()
-    {
-        File file;
-        Scanner myReader;
-        try {
-            file = new File(extensions_file);
-            myReader = new Scanner(file);
-            while (myReader.hasNextLine()) {
-                String line = myReader.nextLine();
-                String[] splitted = line.split(" ",2);
-                extensionsDistance.put(splitted[0],Double.parseDouble(splitted[1]));
-            }
-            myReader.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("An error occurred while reading from file.");
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * this function loops through the tags and calculate each word's score
-     * @param listOfWords: all tags with their text
-     * @param url: the processed url
-     * @return return map of words score in the processed document(url)
-     */
-    public static HashMap<String,Double> CalculateWordScore(ArrayList<ArrayList<String>> listOfWords,String url)
-    {
-        HashMap<String,Double> wordScore = new HashMap<String, Double>();
-        int idx = 0;
-        for (ArrayList<String> listOfWord : listOfWords) {
-            for (String s : listOfWord) {
-                if(wordScore.containsKey(s))
-                    wordScore.put(s,wordScore.get(s)+ tagScores.get(idx));
-                else
-                    wordScore.put(s, tagScores.get(idx));
-            }
-            idx++;
-        }
-        return wordScore;
-    }
-
-    /**
-     * this function calculates the geographic location's score of a given url
-     * @param url:the processed url
-     * @return the score of geographic location of the processed url
-     */
-    public static double CalculateGeographicLocationScore(String url)
-    {
-        String ext = url.substring(url.lastIndexOf('.'));
-        if(extensionsDistance.containsKey(ext))
-            return 1.0-(extensionsDistance.get(ext)/maxDistance);
-        return 0.0;
-    }
-
-    /**
-     * this function calculates date score
-     * @param date: last modified date of url
-     * @return date score
-     */
-    public static double CalculateDateScore(String date)
-    {
-        current_date = LocalDate.now();
-        String [] data = date.split(" ");
-        LocalDate url_date = LocalDate.of(Integer.parseInt(data[2]), months.get(data[1].toLowerCase()), Integer.parseInt(data[0]));
-        long DaysInBetween = ChronoUnit.DAYS.between(start_date, url_date);
-        long TotalDays = ChronoUnit.DAYS.between(start_date, current_date);
-        return (DaysInBetween*1.0/TotalDays);
-    }
-    /**
-     * This function used in to parse html without pre processing to be used in phrase searching 
-     **/
-    static String HTMLPhraseParser(String url){
-        String content = new String();
-
-        // HTML Document
-        Document doc;
-
-        try {
-            doc = Jsoup.connect(url).get();
-            content = doc.body().text().toLowerCase();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return content;
-    }
-    /**
-     * This function takes url and return Array list of Array list of words in each header
-     * after apply pre processing on them.
-     **/
-    static ArrayList<ArrayList<String>> HTMLParser(String url){
-
-        ArrayList<ArrayList<String>>listOfWords=new ArrayList<ArrayList<String>>();
-
-        // HTML Document
-        Document doc;
-
-        String title="";
-        String header1 ="",header2="",header3="",header4="",header5="",header6="";
-        String paragraph="";
-        String span="";
-        String list="";
-        String tableRow="";
-        int totalNumberOfWords=0;
-        try {
-            doc = Jsoup.connect(url).get();
-            title = doc.title();
-            totalNumberOfWords+=SplitStrings(title).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(title))));
-
-            header1=doc.body().getElementsByTag("h1").text();
-            totalNumberOfWords+=SplitStrings(header1).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header1))));
-            header2=doc.body().getElementsByTag("h2").text();
-            totalNumberOfWords+=SplitStrings(header2).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header2))));
-            header3=doc.body().getElementsByTag("h3").text();
-            totalNumberOfWords+=SplitStrings(header3).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header3))));
-            header4=doc.body().getElementsByTag("h4").text();
-            totalNumberOfWords+=SplitStrings(header4).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header4))));
-            header5=doc.body().getElementsByTag("h5").text();
-            totalNumberOfWords+=SplitStrings(header5).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header5))));
-            header6=doc.body().getElementsByTag("h6").text();
-            totalNumberOfWords+=SplitStrings(header6).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(header6))));
-
-            paragraph=doc.body().getElementsByTag("p").text();
-            totalNumberOfWords+=SplitStrings(paragraph).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(paragraph))));
-
-            span=doc.body().getElementsByTag("span").text();
-            totalNumberOfWords+=SplitStrings(span).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(span))));
-
-            list=doc.body().getElementsByTag("li").text();
-            totalNumberOfWords+=SplitStrings(list).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(list))));
-
-            tableRow=doc.body().getElementsByTag("tr").text();
-            totalNumberOfWords+=SplitStrings(tableRow).size();
-            listOfWords.add(ApplyingStemming(RemovingStoppingWords(SplitStrings(tableRow))));
-
-            String lastModified=LastModified(url);
-            String totalNumberOfWordInDoc=Integer.toString(totalNumberOfWords);
-            ArrayList<String>metaData=new ArrayList<>();
-            metaData.add(totalNumberOfWordInDoc);
-            metaData.add(lastModified);
-
-            listOfWords.add(metaData);
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return listOfWords;
-    }
     /**
      * This function remove un related words and parts from words that are un related and ignore other lang than english
      **/
@@ -304,21 +55,7 @@ public class WordsExtractionProcess {
         }
         return  word;
     }
-    /**
-     * This function get last modified date stored by server
-     **/
-    static String LastModified(String webSiteUrl) throws IOException {
-        URL url = new URL(webSiteUrl);
-        URLConnection connection = url.openConnection();
-        String date=connection.getHeaderField("Last-Modified");
-        ArrayList<String>dateArrayList=new ArrayList<>();
-        if(date==null)
-            return "1 jan 1990";
-        else{
-            dateArrayList=SplitStrings(date);
-            return dateArrayList.get(1)+dateArrayList.get(2)+dateArrayList.get(3);
-        }
-    }
+    
     /**
      * This function split given string and return array list of split strings
      **/
@@ -328,7 +65,7 @@ public class WordsExtractionProcess {
     /**
      * This function take a path of file that contain list os stopping words to be removed
      **/
-    public static void loadStoppingWords(String fileName){
+    private static void loadStoppingWords(String fileName){
         File file;
         Scanner myReader;
         try {
@@ -370,11 +107,13 @@ public class WordsExtractionProcess {
         listOfStemmedWords.addAll(set);
         return  listOfStemmedWords;
     }
+
     static class Stemmer {
+    
         private String word;
         private int i,
                 j, k;
-
+    
         /**
          * Constructor that take word and transform it to lower case
          **/
@@ -387,7 +126,7 @@ public class WordsExtractionProcess {
             this.word=word.toLowerCase();
             i = word.length();
         }
-
+    
         /**
          * This function check if there is a consonant char at given position
          **/
@@ -405,7 +144,7 @@ public class WordsExtractionProcess {
                     return true;
             }
         }
-
+    
         /**
          *   This function measures the number of consonant sequences between 0 and j. if c is
          a consonant sequence and v a vowel sequence, and <..> indicates arbitrary
@@ -441,7 +180,7 @@ public class WordsExtractionProcess {
                 i++;
             }
         }
-
+    
         /**
          *  this function check if word contains a vowel
          **/
@@ -450,23 +189,23 @@ public class WordsExtractionProcess {
             for (i = 0; i <= j; i++) if (!isConsonant(i)) return true;
             return false;
         }
-
+    
         /**
          *  This function check if there is double Consonant or not in word
          **/
-
+    
         private boolean ContainDoubleConsonant(int j) {
             if (j < 1) return false;
             if (word.charAt(j) != word.charAt(j - 1)) return false;
             return isConsonant(j);
         }
-
+    
         /** function CVC is is checking this seq : consonant - vowel - consonant
          and also if the second c is not w,x or y. this is used when trying to
          restore an e at the end of a short word. e.g.
          cav(e), lov(e), hop(e), crim(e), but ,snow, box, tray.
          **/
-
+    
         private boolean CVC(int i) {
             if (i < 2 || !isConsonant(i) || isConsonant(i - 1) || !isConsonant(i - 2)) return false;
             {
@@ -474,7 +213,7 @@ public class WordsExtractionProcess {
                 return ch != 'w' && ch != 'x' && ch != 'y';
             }
         }
-
+    
         /**
          * Get the subsequence of string at end of word
          **/
@@ -486,11 +225,11 @@ public class WordsExtractionProcess {
             j = k - l;
             return true;
         }
-
+    
         /**
          * This function Replace ending of word
          **/
-
+    
         private void SetTo(String s) {
             int l = s.length();
             int o = j + 1;
@@ -498,11 +237,11 @@ public class WordsExtractionProcess {
                 word = word.substring(0,o + i)+s.charAt(i)+ word.substring(o+i+1);
             k = j + l;
         }
-
+    
         /**
          * This function checking measure of word to replace the ending of word
          **/
-
+    
         private void ReplaceEnding(String s) {
             if (MeasureNumberOfConsonantSeq() > 0) SetTo(s);
         }
@@ -523,7 +262,7 @@ public class WordsExtractionProcess {
                 word=word.substring(0,k)+'f';
             }
         }
-
+    
         /** step1() gets rid of plurals and -ed or -ing. e.g.
          caresses  ->  caress
          ponies    ->  poni
@@ -562,21 +301,21 @@ public class WordsExtractionProcess {
                 } else if (MeasureNumberOfConsonantSeq() == 1 && CVC(k)) SetTo("e");
             }
         }
-
+    
         /**
          * Step2 turns terminal y to i when there is another vowel in the stem.
          **/
-
+    
         private void Step2() {
             if (ends("y") && ContainVowel())
                 word = word.substring(0,k)+'i'+ word.substring(k+1);// Need to be revised
         }
-
+    
         /**
          * Step3 function maps double suffices to single ones. so -ization ( = -ize plus-ation) maps to -ize etc.
          * note that the string before the suffix must give m() > 0.
          **/
-
+    
         private void Step3() {
             if (k == 0) return;
             switch (word.charAt(k - 1)) {
@@ -681,11 +420,11 @@ public class WordsExtractionProcess {
                     }
             }
         }
-
+    
         /**
          *  Step4 deals with -ic-, -full, -ness etc. similar strategy to step3. *
          **/
-
+    
         private void step4() {
             switch (word.charAt(k)) {
                 case 'e':
@@ -726,11 +465,11 @@ public class WordsExtractionProcess {
                     break;
             }
         }
-
+    
         /**
          *  Step5 takes off -ant, -ence etc., in context <c>vcvc<v>.
          **/
-
+    
         private void Step5() {
             if (k == 0) return; /* for Bug 1 */
             switch (word.charAt(k - 1)) {
@@ -785,11 +524,11 @@ public class WordsExtractionProcess {
             }
             if (MeasureNumberOfConsonantSeq() > 1) k = j;
         }
-
+    
         /**
          *  Step6 removes a final -e if m() > 1.
          **/
-
+    
         private void step6() {
             j = k;
             if (word.charAt(k) == 'e') {
@@ -798,7 +537,7 @@ public class WordsExtractionProcess {
             }
             if (word.charAt(k) == 'l' && ContainDoubleConsonant(k) && MeasureNumberOfConsonantSeq() > 1) k--;
         }
-
+    
         public String Stemming(String word) {
             NewWord(word);
             k = i - 1 ;

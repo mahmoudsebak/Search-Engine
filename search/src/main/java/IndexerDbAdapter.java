@@ -18,6 +18,7 @@ public class IndexerDbAdapter {
     public static final String COL_URL = "url";
     // content of the url after removing tags (used in phrase search)
     public static final String COL_CONTENT = "content";
+    public static final String COL_TITLE = "title";
     public static final String COL_CRAWLED_AT = "crawled_at";
     public static final String COL_INDEXED = "indexed";
     public static final String COL_PAGE_RANK = "page_rank";
@@ -29,23 +30,6 @@ public class IndexerDbAdapter {
 
     public static final String COL_SRC_URL = "src_url";
     public static final String COL_DST_URL = "dst_url";
-
-    // these are the corresponding indices
-    public static final int INDEX_ID = 0;
-    public static final int INDEX_URL = INDEX_ID + 1;
-    public static final int INDEX_CONTENT = INDEX_ID + 2;
-    public static final int INDEX_CRAWLED_AT = INDEX_ID + 3;
-    public static final int INDEX_INDEXED = INDEX_ID + 4;
-    public static final int INDEX_PAGE_RANK = INDEX_ID + 5;
-    public static final int INDEX_DATE_SCORE = INDEX_ID + 6;
-    public static final int INDEX_GEO_SCORE = INDEX_ID + 7;
-
-    public static final int INDEX_WORD = INDEX_ID + 1;
-    public static final int INDEX_URL_TABLE2 = INDEX_ID + 2;
-    public static final int INDEX_SCORE = INDEX_ID + 3;
-
-    public static final int INDEX_SRC_URL = INDEX_ID + 1;
-    public static final int INDEX_DST_URL = INDEX_ID + 2;
 
     private Connection conn;
     private static final String DATABASE_NAME = "dba_search_indexer";
@@ -62,9 +46,10 @@ public class IndexerDbAdapter {
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
             "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256),"
-                    + " %s TEXT, %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0, %s double, %s double);",
-            TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK, COL_DATE_SCORE,
-            COL_GEO_SCORE);
+                    + " %s TEXT, %s varchar(512), %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0,"
+                    + " %s double DEFAULT 0, %s double DEFAULT 0);",
+            TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_TITLE, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK,
+            COL_DATE_SCORE, COL_GEO_SCORE);
 
     private static final String TABLE1_INDEX_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s);",
             TABLE_URLS_INDEX_NAME, TABLE_URLS_NAME, COL_URL);
@@ -249,14 +234,15 @@ public class IndexerDbAdapter {
      *                   pages)
      * @param geo_score  the geographic location score of the url
      */
-    public void updateURL(String url, String content, double date_score, double geo_score) {
-        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
-                COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
+    public void updateURL(String url, String content, String title, double date_score, double geo_score) {
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
+                COL_TITLE, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, content);
-            ps.setDouble(2, date_score);
-            ps.setDouble(3, geo_score);
-            ps.setString(4, url);
+            ps.setString(2, title);
+            ps.setDouble(3, date_score);
+            ps.setDouble(4, geo_score);
+            ps.setString(5, url);
             ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -298,7 +284,7 @@ public class IndexerDbAdapter {
     }
 
     /**
-     * @return first un-indexed URL
+     * @return first un-indexed URL or null if not found
      */
     public String getUnindexedURL() {
         String sql = String.format("SELECT %s FROM %s WHERE %s IS false LIMIT 1", COL_URL, TABLE_URLS_NAME,
@@ -370,12 +356,12 @@ public class IndexerDbAdapter {
     // each page of search results contains `limit` urls
     public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
         String sql = String.format(
-                "SELECT %s, %s from( SELECT %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
+                "SELECT %s, %s, %s from( SELECT %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
                         + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                         + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
                         + ") and %s < 0.6 GROUP by %s ORDER BY words_score DESC LIMIT ?, ?) as temp2"
                         + " ORDER by (words_score + %s + %s + %s) DESC",
-                COL_URL, COL_CONTENT, COL_URL, COL_CONTENT, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE,
+                COL_URL, COL_CONTENT, COL_TITLE, COL_URL, COL_CONTENT, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE,
                 TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD, COL_WORD,
                 TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
@@ -393,6 +379,7 @@ public class IndexerDbAdapter {
                     HashMap<String, String> elem = new HashMap<String, String>();
                     elem.put("url", rs.getString(1));
                     elem.put("content", rs.getString(2));
+                    elem.put("title", rs.getString(3));
                     ret.add(elem);
                 }
                 return ret;
@@ -407,8 +394,8 @@ public class IndexerDbAdapter {
     }
 
     public ArrayList<HashMap<String, String>> queryPhrase(String phrase, int limit, int page) {
-        String sql = String.format("SELECT %s, %s FROM %s WHERE %s LIKE ? LIMIT ?, ?", COL_URL, COL_CONTENT,
-                TABLE_URLS_NAME, COL_CONTENT);
+        String sql = String.format("SELECT %s, %s, %s FROM %s WHERE %s LIKE ? ORDER by (%s + %s + %s) DESC LIMIT ?, ?",
+                COL_URL, COL_CONTENT, COL_TITLE, TABLE_URLS_NAME, COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
             // escape wildcard characters in phrase query
@@ -423,6 +410,7 @@ public class IndexerDbAdapter {
                     HashMap<String, String> elem = new HashMap<String, String>();
                     elem.put("url", rs.getString(1));
                     elem.put("content", rs.getString(2));
+                    elem.put("title", rs.getString(3));
                     ret.add(elem);
                 }
                 return ret;
@@ -440,8 +428,7 @@ public class IndexerDbAdapter {
      * @return all links that are used in page rank
      */
     public ArrayList<Pair> fetchAllLinks() {
-        String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL,
-                TABLE_LINKS_NAME);
+        String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL, TABLE_LINKS_NAME);
         try (Statement stmt = conn.createStatement()) {
 
             try (ResultSet rs = stmt.executeQuery(sql)) {

@@ -11,9 +11,6 @@ import javax.servlet.http.HttpServletResponse;
 
 import com.google.gson.Gson;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-
 @WebServlet("/query")
 public class QueryServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
@@ -29,19 +26,6 @@ public class QueryServlet extends HttpServlet {
 
 		ArrayList<HashMap<String, String>> result = QueryProcessor.ProcessQuery(query,page);
 		
-		// add title of the pages in response
-		for (HashMap<String,String> pageEntry : result) {
-			Document doc;
-
-			try {
-				doc = Jsoup.connect(pageEntry.get("url")).get();
-				String title = doc.title();
-				pageEntry.put("title", title);
-			} catch (IOException e) {
-				e.printStackTrace();
-			}	
-		}
-
 		HashMap<String, Object> res = new HashMap<>();
 		res.put("result", result);
 		out.print(gson.toJson(res));
