@@ -27,11 +27,12 @@ public class Indexer {
     
                 Integer total_words = indexer.getTotalNumberOfWords();
                 System.out.println(String.format("found %d words", total_words));
+                HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords(), total_words);
                 adapter.updateURL(url, indexer.getContent(), indexer.getTitle(),
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
-                HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords(), total_words);
                 adapter.addWords(wordScore, url);
+                adapter.addImages(url, indexer.getImages().toArray(new String[0]));
                 System.out.println(String.format("Indexed %d page(s)", ++cnt));
                 
             } catch (Exception e) {

@@ -7,6 +7,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Properties;
 import java.util.Map.Entry;
 
 public class IndexerDbAdapter {
@@ -126,9 +127,22 @@ public class IndexerDbAdapter {
             }
             conn.close();
 
-            conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME + "?rewriteBatchedStatements=true", USERNAME, PASSWORD);
+            Properties info = new Properties();
+            info.setProperty("user", USERNAME);
+            info.setProperty("password", PASSWORD);
+            info.setProperty("cachePrepStmts", "true");
+            info.setProperty("prepStmtCacheSize", "250");
+            info.setProperty("prepStmtCacheSqlLimit", "2048");
+            info.setProperty("useServerPrepStmts", "true");
+            info.setProperty("useLocalSessionState", "true");
+            info.setProperty("rewriteBatchedStatements", "true");
+            info.setProperty("cacheResultSetMetadata", "true");
+            info.setProperty("cacheServerConfiguration", "true");
+            info.setProperty("elideSetAutoCommits", "true");
+            info.setProperty("maintainTimeStats", "false");
+            conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME, info);
             createTables();
-
+            
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -274,11 +288,11 @@ public class IndexerDbAdapter {
                 COL_TITLE, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
         try(PreparedStatement ps = conn.prepareStatement(sql)){
             for(int i=0;i<pages.size();i++){
-                ps.setString(1, pages.get(i).content);
-                ps.setString(2, pages.get(i).title);
-                ps.setDouble(3, pages.get(i).dateScore);
-                ps.setDouble(4, pages.get(i).geographicScroe);
-                ps.setString(5, pages.get(i).url);
+                ps.setString(1, pages.get(i).getContent());
+                ps.setString(2, pages.get(i).getTitle());
+                ps.setDouble(3, pages.get(i).getDateScore());
+                ps.setDouble(4, pages.get(i).getGeoScore());
+                ps.setString(5, pages.get(i).getUrl());
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -299,6 +313,25 @@ public class IndexerDbAdapter {
             ps.setDouble(1, page_rank);
             ps.setString(2, url);
             ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * update pages ranks
+     * 
+     * @param ranks hashmap of each url and its rank
+     */
+    public void updatePagesRanks(HashMap<String, Double> ranks) {
+        String sql = String.format("UPDATE %s set %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_PAGE_RANK, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (Entry<String, Double> page: ranks.entrySet()) {
+                ps.setDouble(1, page.getValue());
+                ps.setString(2, page.getKey());
+                ps.addBatch();
+            }
+            ps.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -373,8 +406,6 @@ public class IndexerDbAdapter {
         }
     }
 
-    // score is sum of (term frequency of certain tag)*(tag score) of different html
-    // tags of a word
     /**
      * add a word of a url
      * 
@@ -427,6 +458,25 @@ public class IndexerDbAdapter {
             return false;
         }
         return true;
+    }
+
+    /**
+     * add all images of a url
+     * @param url the url to add its imags
+     * @param images the image to be added
+     */
+    public void addImages(String url, String[] images) {
+        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (String image : images) {
+                ps.setString(1, url);
+                ps.setString(2, image);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 
     // utility function to create placeholders (?) given a length

@@ -9,12 +9,12 @@ import java.util.Map.Entry;
 
 public class Ranker {
     
-    public static final double title_score = 1;
-    public static final double h1_score = 1;
-    public static final double h2_score = 1;
-    public static final double h3_score = 1;
-    public static final double h4_score = 1;
-    public static final double h5_score = 1;
+    public static final double title_score = 8;
+    public static final double h1_score = 3;
+    public static final double h2_score = 2.5;
+    public static final double h3_score = 2;
+    public static final double h4_score = 1.5;
+    public static final double h5_score = 1.2;
     public static final double restOfTags_score = 1;
     public static final double maxDistance = 12000.0;
     private static ArrayList<Double>tagScores;
