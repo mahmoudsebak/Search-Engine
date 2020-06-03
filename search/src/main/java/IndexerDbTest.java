@@ -26,40 +26,40 @@ public class IndexerDbTest {
         dbAdapter.resetPagesRank();
         ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
         Gson gson = new Gson();
-        // System.out.println(gson.toJson(arr));
-        // System.out.println();
+        System.out.println(gson.toJson(arr));
+        System.out.println();
 
         arr = dbAdapter.queryWords(new String [] {"competitive"}, 10, 1);
-        // System.out.println(arr);
-        // System.out.println();
+        System.out.println(arr);
+        System.out.println();
 
         arr = dbAdapter.queryImage("programming", 10, 1);
-        // System.out.println(arr);
-        // System.out.println();
+        System.out.println(arr);
+        System.out.println();
 
         arr = dbAdapter.queryImage(new String [] {"competitive"}, 10, 1);
         System.out.println(arr);
         System.out.println();
 
         arr = dbAdapter.queryPhrase("competitive programming", 10, 1);
-        // System.out.println(arr);
-        // System.out.println();
+        System.out.println(arr);
+        System.out.println();
 
-        // System.out.println(dbAdapter.getUnindexedURL());
-        // System.out.println();
+        System.out.println(dbAdapter.getUnindexedURL());
+        System.out.println();
 
-        // System.out.println(dbAdapter.getUnCrawledURLs());
-        // System.out.println();
+        System.out.println(dbAdapter.getUnCrawledURLs());
+        System.out.println();
 
-        // dbAdapter.crawlURL("https://codeforces.com/");
-        // System.out.println(dbAdapter.getUnCrawledURLs());
-        // System.out.println();
+        dbAdapter.crawlURL("https://codeforces.com/");
+        System.out.println(dbAdapter.getUnCrawledURLs());
+        System.out.println();
 
-        // System.out.println(dbAdapter.getCrawledURLs());
-        // System.out.println();
+        System.out.println(dbAdapter.getCrawledURLs());
+        System.out.println();
 
-        // System.out.println(dbAdapter.getURLsToBeRecrawled());
-        // System.out.println();
+        System.out.println(dbAdapter.getURLsToBeRecrawled());
+        System.out.println();
 
         dbAdapter.close();
     }
