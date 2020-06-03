@@ -1,6 +1,4 @@
 import java.io.IOException;
-import java.net.URL;
-import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -9,7 +7,6 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 
 public class Indexer {
-    private String _url;
     private Connection connection;
     private Document doc;
     private ArrayList<ArrayList<String>> listOfWords;
@@ -45,7 +42,6 @@ public class Indexer {
     }
 
     Indexer(String url) throws IOException {
-        _url = url;
         connection = Jsoup.connect(url);
         doc = connection.get();
         HTMLParser();
@@ -97,15 +93,13 @@ public class Indexer {
      **/
     public String getLastModified() {
         try {
-            URL url = new URL(_url);
-            URLConnection connection = url.openConnection();
-            String date = connection.getHeaderField("Last-Modified");
+            String date = connection.execute().header("Last-Modified");
             ArrayList<String> dateArrayList = new ArrayList<>();
             if (date == null)
                 return "1 jan 1990";
             else {
                 dateArrayList = WordsExtractionProcess.SplitStrings(date);
-                return dateArrayList.get(1) + dateArrayList.get(2) + dateArrayList.get(3);
+                return dateArrayList.get(1) +" "+ dateArrayList.get(2) + " " + dateArrayList.get(3);
             }
         } catch (IOException e) {
             e.printStackTrace();
