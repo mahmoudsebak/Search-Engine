@@ -109,21 +109,25 @@ public class SearchResult extends AppCompatActivity {
                                 public void onSuccessResponse(String response) throws JSONException {
                                     JSONObject obj = new JSONObject(response);
                                     try {
-                                        sitesArrayList.clear();
-                                        // converting response to json object
-                                        // if no error in response
-                                        // getting the result from the response
-                                        JSONArray searchResult = obj.getJSONArray("result");
-                                        for(int i=0;i<searchResult.length();i++) {
-                                            WebSites currentWebsite=new WebSites();
-                                            JSONObject current = searchResult.getJSONObject(i);
-                                            currentWebsite.setUrl(current.getString("url"));
-                                            currentWebsite.setDescription(current.getString("content"));
-                                            currentWebsite.setHeader(current.getString("title"));
-                                            sitesArrayList.add(currentWebsite);
-                                        }
-                                        customAdapterForWebsiteList.notifyDataSetChanged();
-                                        endOfResult= sitesArrayList.size() == 0;
+                                        if(obj.getJSONArray("result").length()!=0){
+                                            sitesArrayList.clear();
+                                            // converting response to json object
+                                            // if no error in response
+                                            // getting the result from the response
+                                            JSONArray searchResult = obj.getJSONArray("result");
+                                            for(int i=0;i<searchResult.length();i++) {
+                                                WebSites currentWebsite=new WebSites();
+                                                JSONObject current = searchResult.getJSONObject(i);
+                                                currentWebsite.setUrl(current.getString("url"));
+                                                currentWebsite.setDescription(current.getString("content"));
+                                                currentWebsite.setHeader(current.getString("title"));
+                                                sitesArrayList.add(currentWebsite);
+                                            }
+                                            customAdapterForWebsiteList.notifyDataSetChanged();
+                                            webSitesListView.setSelection(0);
+                                            endOfResult= sitesArrayList.size() == 0;
+                                        }else
+                                            Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
                                     } catch (JSONException e) {
                                         if(obj.isNull("result"))
                                             Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
@@ -206,7 +210,7 @@ public class SearchResult extends AppCompatActivity {
             ArrayList<WebSites>arr=new ArrayList<>();
             try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ (currentPage+1));
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
