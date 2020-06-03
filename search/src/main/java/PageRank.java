@@ -34,24 +34,24 @@ public class PageRank
 
         for(int i = 0 ; i < connections.size() ; i++)
         {
+            PagesRank.put(connections.get(i).first,1.0);
+            PagesRank.put(connections.get(i).second,1.0);
+
+            if(connections.get(i).first.startsWith(connections.get(i).second))    // ignore back_ward connection to the parent link
+                continue;
+
             if(!Pages.containsKey(connections.get(i).second))
                 Pages.put(connections.get(i).second,new HashSet<String>());
-            
+
             HashSet<String>temp = Pages.get(connections.get(i).second);
             temp.add(connections.get(i).first);
             Pages.put(connections.get(i).second,temp);
-
-            PagesRank.put(connections.get(i).first,1.0);
-            PagesRank.put(connections.get(i).second,1.0);
 
             if(outDegree.containsKey(connections.get(i).first))
                 outDegree.put(connections.get(i).first,outDegree.get(connections.get(i).first)+1);
             else
                 outDegree.put(connections.get(i).first,1);
         }
-
-        for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
-            entry.setValue(1.0/PagesRank.size());
 
         for(int i = 0 ; i < Iterations ; i++)
         {
