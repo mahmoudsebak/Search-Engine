@@ -18,14 +18,15 @@ public class QueryServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request, HttpServletResponse response)
 			throws ServletException, IOException {
 		String query = request.getParameter("query");
+		String image = request.getParameter("img");
 		int page = Integer.parseInt(request.getParameter("page"));
 		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		Gson gson = new Gson();
+		boolean isImage = (image == "1") ? true : false;
 
-		ArrayList<HashMap<String, String>> result = QueryProcessor.ProcessQuery(query,page);
-		
+		ArrayList<HashMap<String, String>> result = QueryProcessor.ProcessQuery(query, page, isImage);
 		HashMap<String, Object> res = new HashMap<>();
 		res.put("result", result);
 		out.print(gson.toJson(res));

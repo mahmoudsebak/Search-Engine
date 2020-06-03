@@ -22,7 +22,7 @@ public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
         // seedPages.add("https://codeforces.com/");
-        // seedPages.add("https://www.geeksforgeeks.org/");
+        seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("http://odp.org/");
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
@@ -112,7 +112,6 @@ class Crawler {
                 this.pagesVisited.put(page, true);
             }
         }
-        int x=0;
     }
 
     /**
