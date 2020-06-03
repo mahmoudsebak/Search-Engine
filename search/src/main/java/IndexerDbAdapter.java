@@ -52,20 +52,20 @@ public class IndexerDbAdapter {
     private static final String TABLE1_CREATE = String.format(
             "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256),"
                     + " %s TEXT, %s varchar(512), %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0,"
-                    + " %s double DEFAULT 0, %s double DEFAULT 0);",
+                    + " %s double DEFAULT 0, %s double DEFAULT 0)",
             TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_TITLE, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK,
             COL_DATE_SCORE, COL_GEO_SCORE);
 
-    private static final String TABLE1_INDEX_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s);",
+    private static final String TABLE1_INDEX_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s)",
             TABLE_URLS_INDEX_NAME, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(256), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE);",
+                    + " %s varchar(256), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
-            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
             COL_URL);
 
     public static final String TABLE3_LINKS_CREATE = String.format(
@@ -76,7 +76,7 @@ public class IndexerDbAdapter {
             TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE3_INDEX_CREATE = String.format(
-            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
             COL_SRC_URL, COL_DST_URL);
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
@@ -85,10 +85,10 @@ public class IndexerDbAdapter {
                 TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_URL, TABLE_URLS_NAME, COL_URL);
     
     private static final String TABLE4_INDEX_CREATE = String.format(
-                "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s);", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
+                "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
                 COL_URL, COL_IMAGE);
 
-    private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s;", DATABASE_NAME);
+    private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
     public IndexerDbAdapter() {
         try {
@@ -126,8 +126,9 @@ public class IndexerDbAdapter {
             }
             conn.close();
 
-            conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME, USERNAME, PASSWORD);
+            conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME + "?rewriteBatchedStatements=true", USERNAME, PASSWORD);
             createTables();
+            conn.setAutoCommit(false);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -137,6 +138,7 @@ public class IndexerDbAdapter {
     public void close() {
         if (conn != null) {
             try {
+                conn.commit();
                 conn.close();
 
             } catch (Exception e) {
@@ -242,27 +244,28 @@ public class IndexerDbAdapter {
     }
 
     /**
-     * update a url
+     * update a urls
      * 
      * @param url        the url to be updated
      * @param content    the full plain text of the url without tags
      * @param date_score the date score of the url (recent pages are favored to old
      *                   pages)
      * @param geo_score  the geographic location score of the url
+     * @throws SQLException
      */
-    public void updateURL(String url, String content, String title, double date_score, double geo_score) {
+    public void updateAllURLS(ArrayList<Page>pages) throws SQLException {
         String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
                 COL_TITLE, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, content);
-            ps.setString(2, title);
-            ps.setDouble(3, date_score);
-            ps.setDouble(4, geo_score);
-            ps.setString(5, url);
-            ps.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
+        PreparedStatement preparedStatement = conn.prepareStatement(sql);
+        for(int i=0;i<pages.size();i++){
+            preparedStatement.setString(1, pages.get(i).content);
+            preparedStatement.setString(2, pages.get(i).title);
+            preparedStatement.setDouble(3, pages.get(i).dateScore);
+            preparedStatement.setDouble(4, pages.get(i).geographicScroe);
+            preparedStatement.setString(5, pages.get(i).url);
+            preparedStatement.addBatch();
         }
+        preparedStatement.executeBatch();
     }
 
     /**
@@ -349,7 +352,6 @@ public class IndexerDbAdapter {
         } catch (SQLException e) {
             e.printStackTrace();
         }
-
     }
 
     // score is sum of (term frequency of certain tag)*(tag score) of different html
@@ -649,3 +651,4 @@ public class IndexerDbAdapter {
     }
 
 }
+

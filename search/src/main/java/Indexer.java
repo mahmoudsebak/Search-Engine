@@ -1,4 +1,5 @@
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -14,8 +15,9 @@ public class Indexer {
     private ArrayList<ArrayList<String>> listOfWords;
     private int totalNumberOfWords;
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, SQLException {
         IndexerDbAdapter adapter = new IndexerDbAdapter();
+        ArrayList<Page>pages=new ArrayList<>();
         adapter.open();
 
         int cnt = 0;
@@ -27,10 +29,9 @@ public class Indexer {
     
                 Integer total_words = indexer.getTotalNumberOfWords();
                 System.out.println(String.format("found %d words", total_words));
-                adapter.updateURL(url, indexer.getContent(), indexer.getTitle(),
-                        Ranker.CalculateDateScore(indexer.getLastModified()),
-                        Ranker.CalculateGeographicLocationScore(url));
-    
+                pages.add(new Page(url, indexer.getContent(), indexer.getTitle(),
+                         Ranker.CalculateDateScore("1 jan 1990"),//indexer.getLastModified()
+                        Ranker.CalculateGeographicLocationScore(url)));
                 HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords(), total_words);
                 adapter.addWords(wordScore, url);
                 System.out.println(String.format("Indexed %d page(s)", ++cnt));
@@ -40,6 +41,7 @@ public class Indexer {
             }
             adapter.setIndexedURL(url, true);
         }
+        adapter.updateAllURLS(pages);
         adapter.close();
     }
 
