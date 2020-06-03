@@ -505,6 +505,39 @@ public class IndexerDbAdapter {
         return null;
     }
 
+    public ArrayList<HashMap<String, String>> queryImage(String phrase, int limit, int page) {
+        String sql = String.format(
+            "SELECT %s.%s, %s.%s FROM %s INNER JOIN %s ON %s.%s = %s.%s WHERE %s LIKE ? ORDER by (%s + %s + %s) "
+                    + " DESC LIMIT ?, ? ",
+            TABLE_URLS_NAME, COL_URL, TABLE_IMAGES_NAME, COL_IMAGE, TABLE_URLS_NAME, TABLE_IMAGES_NAME,
+            TABLE_IMAGES_NAME, COL_URL, TABLE_URLS_NAME, COL_URL, COL_CONTENT, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            // escape wildcard characters in phrase query
+            phrase = phrase.replace("_", "%_").replace("%", "%%");
+            ps.setString(1, "%%" + phrase + "%%");
+            ps.setInt(2, (page - 1) * limit);
+            ps.setInt(3, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
+                while (rs.next()) {
+                    HashMap<String, String> elem = new HashMap<String, String>();
+                    elem.put("url", rs.getString(1));
+                    elem.put("image", rs.getString(2));
+                    ret.add(elem);
+                }
+                return ret;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     /**
      * @return all links that are used in page rank
      */

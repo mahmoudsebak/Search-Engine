@@ -91,7 +91,7 @@ class Crawler {
     private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
-    private static final int MAX_PAGES_TO_BE_CRAWLED = 9000;
+    private static final int MAX_PAGES_TO_BE_CRAWLED = 90000;
     private static final int MAX_PAGES_TO_BE_RECRAWLED = 10;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
@@ -163,7 +163,6 @@ class Crawler {
         try {
             url = this.normalizeUrl(url);
         } catch (URISyntaxException e) {
-            e.printStackTrace();
             return 0;
         }
         this.pagesVisited.put(url, true);
@@ -199,12 +198,11 @@ class Crawler {
             try {
                 page = this.normalizeUrl(page);
             } catch (URISyntaxException e) {
-                e.printStackTrace();
                 continue;
             }
             this.pagesToVisit.offer(page);
-            this.adapter.addURL(page);
-            this.adapter.addLink(url, page);
+            // this.adapter.addURL(page);
+            // this.adapter.addLink(url, page);
             i += 1;
         }
         
