@@ -45,8 +45,8 @@ public class IndexerDbAdapter {
     private static final String TABLE_WORDS_INDEX_NAME = "tb2_words_url_index";
     private static final String TABLE_LINKS_NAME = "tb3_links";
     private static final String TABLE_LINKS_INDEX_NAME = "tb3_links_index";
-    private static final String TABLE_IMAGES_NAME = "tb3_images";
-    private static final String TABLE_IMAGES_INDEX_NAME = "tb3_images_index";
+    private static final String TABLE_IMAGES_NAME = "tb4_images";
+    private static final String TABLE_IMAGES_INDEX_NAME = "tb4_images_index";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -397,7 +397,14 @@ public class IndexerDbAdapter {
         }
         return true;
     }
-    
+
+    /**
+     * add an image of a url
+     * 
+     * @param image  the image to be added
+     * @param url   the url to add its image
+     * @return true if added sucessfully, false otherwise
+     */
     public boolean addImage(String url, String image) {
         String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -409,6 +416,7 @@ public class IndexerDbAdapter {
         }
         return true;
     }
+
     // utility function to create placeholders (?) given a length
     private String makePlaceholders(int len) {
         if (len < 1) {
@@ -496,6 +504,14 @@ public class IndexerDbAdapter {
         return null;
     }
 
+    /**
+     * get images from database by phrase
+     * 
+     * @param phrase  the search phrase
+     * @param limit   the number of results in a page
+     * @param page  page number
+     * 
+     */
     public ArrayList<HashMap<String, String>> queryImage(String phrase, int limit, int page) {
         String sql = String.format(
             "SELECT %s.%s, %s.%s FROM %s INNER JOIN %s ON %s.%s = %s.%s WHERE %s LIKE ? ORDER by (%s + %s + %s) "
@@ -509,6 +525,52 @@ public class IndexerDbAdapter {
             ps.setString(1, "%%" + phrase + "%%");
             ps.setInt(2, (page - 1) * limit);
             ps.setInt(3, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
+                while (rs.next()) {
+                    HashMap<String, String> elem = new HashMap<String, String>();
+                    elem.put("url", rs.getString(1));
+                    elem.put("image", rs.getString(2));
+                    ret.add(elem);
+                }
+                return ret;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+    /**
+     * get images from database by words
+     * 
+     * @param words  the list of words
+     * @param limit   the number of results in a page
+     * @param page  page number
+     * 
+     */
+    public ArrayList<HashMap<String, String>> queryImage(String[] words, int limit, int page) {
+        String sql = String.format(
+                "SELECT %s, %s from( SELECT %s, %s, %s, sum(%s*idf) as words_score, %s, %s, %s FROM %s"
+                        + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
+                        + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
+                        + ") and %s < 0.6 GROUP by %s ORDER BY words_score DESC LIMIT ?, ?) as temp2"
+                        + " INNER JOIN %s USING (%s) ORDER by (words_score + %s + %s + %s) DESC",
+                COL_URL, COL_IMAGE, COL_URL, COL_CONTENT, COL_TITLE, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, 
+                COL_GEO_SCORE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD, 
+                COL_WORD, TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, TABLE_IMAGES_NAME, COL_URL, 
+                COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            for (int i = 0; i < words.length; i++) {
+                ps.setString(i + 1, words[i]);
+            }
+            ps.setInt(words.length + 1, (page - 1) * limit);
+            ps.setInt(words.length + 2, limit);
 
             try (ResultSet rs = ps.executeQuery()) {
                 ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
