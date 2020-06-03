@@ -17,6 +17,10 @@ public class IndexerDbTest {
         dbAdapter.addWord("programming", "https://codeforces.com/", 0.4);
         dbAdapter.addWord("competitive", "https://codeforces.com/", 0.5);
         dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.geeksforgeeks.org/");
+        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://codeforces.com/");
+        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.youtube.com/");
+        dbAdapter.addImage("https://codeforces.com/", "https://www.geeksforgeeks.org/");
+        dbAdapter.addImage("https://codeforces.com/", "https://www.youtube.com/");
 
         dbAdapter.resetPagesRank();
         ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
@@ -25,6 +29,10 @@ public class IndexerDbTest {
         System.out.println();
 
         arr = dbAdapter.queryWords(new String [] {"competitive"}, 10, 1);
+        System.out.println(arr);
+        System.out.println();
+
+        arr = dbAdapter.queryImage("programming", 10, 1);
         System.out.println(arr);
         System.out.println();
 
