@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  * This class handles Parsing HTML files and perform pre processing on words

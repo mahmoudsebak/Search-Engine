@@ -128,7 +128,6 @@ public class IndexerDbAdapter {
 
             conn = DriverManager.getConnection(CONNECTION_STRING + DATABASE_NAME + "?rewriteBatchedStatements=true", USERNAME, PASSWORD);
             createTables();
-            conn.setAutoCommit(false);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -138,7 +137,6 @@ public class IndexerDbAdapter {
     public void close() {
         if (conn != null) {
             try {
-                conn.commit();
                 conn.close();
 
             } catch (Exception e) {
@@ -244,28 +242,49 @@ public class IndexerDbAdapter {
     }
 
     /**
-     * update a urls
+     * update a url
      * 
      * @param url        the url to be updated
      * @param content    the full plain text of the url without tags
      * @param date_score the date score of the url (recent pages are favored to old
      *                   pages)
      * @param geo_score  the geographic location score of the url
-     * @throws SQLException
      */
-    public void updateAllURLS(ArrayList<Page>pages) throws SQLException {
+    public void updateURL(String url, String content, String title, double date_score, double geo_score) {
         String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
                 COL_TITLE, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
-        PreparedStatement preparedStatement = conn.prepareStatement(sql);
-        for(int i=0;i<pages.size();i++){
-            preparedStatement.setString(1, pages.get(i).content);
-            preparedStatement.setString(2, pages.get(i).title);
-            preparedStatement.setDouble(3, pages.get(i).dateScore);
-            preparedStatement.setDouble(4, pages.get(i).geographicScroe);
-            preparedStatement.setString(5, pages.get(i).url);
-            preparedStatement.addBatch();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, content);
+            ps.setString(2, title);
+            ps.setDouble(3, date_score);
+            ps.setDouble(4, geo_score);
+            ps.setString(5, url);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
-        preparedStatement.executeBatch();
+    }
+
+    /**
+     * Update a group of urls using batch
+     * @param pages array of pages
+     */
+    public void updateAllURLS(ArrayList<Page>pages){
+        String sql = String.format("UPDATE %s set %s = ?, %s = ?, %s = ?, %s = ? WHERE %s = ?", TABLE_URLS_NAME, COL_CONTENT,
+                COL_TITLE, COL_DATE_SCORE, COL_GEO_SCORE, COL_URL);
+        try(PreparedStatement ps = conn.prepareStatement(sql)){
+            for(int i=0;i<pages.size();i++){
+                ps.setString(1, pages.get(i).content);
+                ps.setString(2, pages.get(i).title);
+                ps.setDouble(3, pages.get(i).dateScore);
+                ps.setDouble(4, pages.get(i).geographicScroe);
+                ps.setString(5, pages.get(i).url);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }  
     }
 
     /**
