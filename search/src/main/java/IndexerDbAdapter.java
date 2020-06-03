@@ -331,18 +331,9 @@ public class IndexerDbAdapter {
      * @param url         the url to add its words
      */
     public void addWords(HashMap<String, Double> wordsScores, String url) {
-        int len = wordsScores.size();
-        if (len < 1)
-            return;
-
-        StringBuilder placeHolders = new StringBuilder(10 * len);
-        placeHolders.append("(" + makePlaceholders(3) + ")");
-        for (int i = 1; i < len; i++) {
-            placeHolders.append(",(" + makePlaceholders(3) + ")");
-        }
 
         String sql = String.format(
-                "INSERT INTO %s(%s, %s, %s) VALUES" + placeHolders.toString()
+                "INSERT INTO %s(%s, %s, %s) VALUES" + makeParentheses(wordsScores.size(), 3)
                         + "ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
                 TABLE_WORDS_NAME, COL_WORD, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -424,6 +415,24 @@ public class IndexerDbAdapter {
         }
     }
 
+    /**
+     * utility function to create parentheses of place holders of size n*m
+     * @param n number of parantheses
+     * @param m number of placeholders inside each parentheses
+     * @return
+     */
+    private String makeParentheses(int n, int m) {
+        if (n < 1) {
+            throw new RuntimeException("No placeholders");
+        } else {
+            StringBuilder string = new StringBuilder(10 * n);
+            string.append("(" + makePlaceholders(m) + ")");
+            for (int i = 1; i < n; i++) {
+                string.append(",(" + makePlaceholders(m) + ")");
+            }
+            return string.toString();
+        }
+    }
     // `page` is the page number in search result,
     // each page of search results contains `limit` urls
     public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
