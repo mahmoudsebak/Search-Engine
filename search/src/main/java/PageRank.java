@@ -17,6 +17,7 @@ public class PageRank
         for(HashMap.Entry<String,Double> entry : ret.entrySet())
             adapter.updateURL(entry.getKey(), entry.getValue());
         long endTime = System.nanoTime();
+
         adapter.close();
         System.out.println("Taken time : "+ ((endTime-startTime)*1.0/1e9));
     }
@@ -57,7 +58,7 @@ public class PageRank
             HashMap<String,Double> temp = new HashMap<>();
             for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
                 temp.put(entry.getKey(), entry.getValue());
-
+            
             for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
             {
                 String Page = entry.getKey();
@@ -76,6 +77,16 @@ public class PageRank
                 }
             }
         }
+
+        //scaling PageRank
+        Double maxRank = 0.0;
+        for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
+            maxRank = Math.max(maxRank,entry.getValue());
+        
+        if(maxRank > 0)
+            for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
+                entry.setValue(entry.getValue()/maxRank);
+
         return PagesRank;
     }
 }
