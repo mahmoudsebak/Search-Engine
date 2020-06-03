@@ -34,24 +34,26 @@ public class PageRank
 
         for(int i = 0 ; i < connections.size() ; i++)
         {
-            if(!Pages.containsKey(connections.get(i).second))
-                Pages.put(connections.get(i).second,new HashSet<String>());
+            String src = connections.get(i).first, dst = connections.get(i).second;
+
+            PagesRank.put(src,1.0);
+            PagesRank.put(dst,1.0);
             
-            HashSet<String>temp = Pages.get(connections.get(i).second);
-            temp.add(connections.get(i).first);
-            Pages.put(connections.get(i).second,temp);
+            if(dst.equals(src.substring(0,src.indexOf('/')+1)) || dst.equals(src))    // ignore back_ward connections to the parent link & self connections
+                continue;
 
-            PagesRank.put(connections.get(i).first,1.0);
-            PagesRank.put(connections.get(i).second,1.0);
+            if(!Pages.containsKey(dst))
+                Pages.put(dst,new HashSet<String>());
 
-            if(outDegree.containsKey(connections.get(i).first))
-                outDegree.put(connections.get(i).first,outDegree.get(connections.get(i).first)+1);
+            HashSet<String>temp = Pages.get(dst);
+            temp.add(src);
+            Pages.put(dst,temp);
+
+            if(outDegree.containsKey(src))
+                outDegree.put(src,outDegree.get(src)+1);
             else
-                outDegree.put(connections.get(i).first,1);
+                outDegree.put(src,1);
         }
-
-        for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
-            entry.setValue(1.0/PagesRank.size());
 
         for(int i = 0 ; i < Iterations ; i++)
         {
@@ -70,8 +72,7 @@ public class PageRank
                     while(it.hasNext())
                     {
                         String in = it.next();
-                        if(!in.contentEquals(Page))
-                            rank += (temp.get(in)/outDegree.get(in));
+                        rank += (temp.get(in)/outDegree.get(in));
                     }
                     entry.setValue(rank);
                 }
