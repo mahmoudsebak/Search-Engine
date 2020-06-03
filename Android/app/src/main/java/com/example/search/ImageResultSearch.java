@@ -95,7 +95,7 @@ public class ImageResultSearch extends AppCompatActivity {
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     editTextString=editTextString.replaceAll("\\s+","");
-                    getResponse(
+                    /*getResponse(
                             Request.Method.GET,
                             ULRConnection.url+"/search/query?query="+editTextString+"&page="+ 1,
                             null,
@@ -123,17 +123,20 @@ public class ImageResultSearch extends AppCompatActivity {
                                         e.printStackTrace();
                                     }
                                 }
-                            },editText.getText().toString(),Integer.toString(currentPage));
+                            },editText.getText().toString(),Integer.toString(currentPage));*/
+                    for(int i=0;i<10;i++)
+                        sitesArrayList.add("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Starsinthesky.jpg/220px-Starsinthesky.jpg");
+                    customAdapterForImageSearch.notifyDataSetChanged();
                 }
             }
         });
-        voiceSearch=findViewById(R.id.search_voice_btn1);
+        voiceSearch=findViewById(R.id.search_voice_btn2);
         voiceSearch.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 startVoiceRecognitionActivity();
             }
         });
-        editText=findViewById(R.id.editText1);
+        editText=findViewById(R.id.editText2);
         editText.setText(getIntent().getStringExtra("toImage"));
         customAdapterForImageSearch =new CustomAdapterForImageSearch(this, sitesArrayList);
         imageGridView.setAdapter(customAdapterForImageSearch);
@@ -193,7 +196,7 @@ public class ImageResultSearch extends AppCompatActivity {
 
         private List<String> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
             ArrayList<String>arr=new ArrayList<>();
-            try {
+            /*try {
                 // converting response to json object
                 JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
                 // if no error in response
@@ -213,7 +216,9 @@ public class ImageResultSearch extends AppCompatActivity {
             else{
                 currentPage+=1;
                 endOfResult=false;
-            }
+            }*/
+            for(int i=0;i<10;i++)
+                arr.add("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Starsinthesky.jpg/220px-Starsinthesky.jpg");
             return  arr;
         }
 

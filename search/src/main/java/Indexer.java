@@ -5,6 +5,8 @@ import java.util.HashMap;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 public class Indexer {
     private Connection connection;
@@ -72,7 +74,7 @@ public class Indexer {
         listOfWords = new ArrayList<ArrayList<String>>();
 
         totalNumberOfWords = 0;
-        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr" };
+        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "a"};
         String title = doc.title();
         ArrayList<String> words = WordsExtractionProcess.SplitStrings(title);
         totalNumberOfWords += words.size();
@@ -82,6 +84,7 @@ public class Indexer {
         for (String tag : tags) {
             String elem = doc.body().getElementsByTag(tag).text();
             words = WordsExtractionProcess.SplitStrings(elem);
+            totalNumberOfWords += words.size();
             listOfWords.add(WordsExtractionProcess.ApplyingStemming(
                 WordsExtractionProcess.RemovingStoppingWords(words)));
         }
@@ -105,5 +108,14 @@ public class Indexer {
             e.printStackTrace();
         }
         return "1 jan 1990";
+    }
+    public ArrayList<String> getImages(){
+        ArrayList<String> imgURLs=new ArrayList<String>();
+        Elements imgs= (Elements) doc.body().getElementsByTag("img");
+        for (Element element : imgs) {
+            String url = element.attr("abs:src");
+            imgURLs.add(url);
+        }
+        return imgURLs;
     }
 }

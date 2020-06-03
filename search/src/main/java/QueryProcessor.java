@@ -23,7 +23,11 @@ public class QueryProcessor {
             ArrayList<String> words = WordsExtractionProcess.ApplyingStemming(WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
             String [] queryWords = words.toArray(new String[0]);
             result = adapter.queryWords(queryWords, PagesLimit, page);
-		}
+        }
+        // for (HashMap<String,String> hashMap : result) {
+        //     String content=hashMap.get("content");
+        //     int index=content.indexOf(query, 0);
+        // }
         adapter.close();
         return result;
     }

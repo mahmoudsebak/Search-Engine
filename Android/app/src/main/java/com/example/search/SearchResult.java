@@ -88,7 +88,7 @@ public class SearchResult extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 Intent i=new Intent(getApplicationContext(),ImageResultSearch.class);
-                i.putExtra("toImage",editText.getText());
+                i.putExtra("toImage",editText.getText().toString());
                 startActivity(i);
             }
         });
