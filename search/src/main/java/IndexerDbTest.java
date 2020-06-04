@@ -61,6 +61,8 @@ public class IndexerDbTest {
         System.out.println(dbAdapter.getURLsToBeRecrawled());
         System.out.println();
 
+        System.out.println(dbAdapter.removeDuplicateLinks());
+        System.out.println(dbAdapter.removeDuplicateImages());
         dbAdapter.close();
     }
 }

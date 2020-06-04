@@ -25,15 +25,17 @@ public class Indexer {
             try {
                 Indexer indexer = new Indexer(url);
     
+                long startTime = System.currentTimeMillis();
                 Integer total_words = indexer.getTotalNumberOfWords();
-                System.out.println(String.format("found %d words", total_words));
+                System.out.println(String.format("Indexing page: %s\nfound %d words",url, total_words));
                 HashMap<String, Double> wordScore = Ranker.CalculateWordScore(indexer.getListOfWords(), total_words);
                 adapter.updateURL(url, indexer.getContent(), indexer.getTitle(),
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
                 adapter.addWords(wordScore, url);
                 adapter.addImages(url, indexer.getImages().toArray(new String[0]));
-                System.out.println(String.format("Indexed %d page(s)", ++cnt));
+                long endTime = System.currentTimeMillis();
+                System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
                 
             } catch (Exception e) {
                 e.printStackTrace();
