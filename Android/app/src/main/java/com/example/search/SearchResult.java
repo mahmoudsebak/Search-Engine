@@ -227,11 +227,14 @@ public class SearchResult extends AppCompatActivity {
                     currentWebsite.setHeader(current.getString("title"));
                     arr.add(currentWebsite);
                 }
+
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            if(arr.size()==0)
+            if(arr.size()==0){
                 endOfResult=true;
+                loadingMore=true;
+            }
             else{
                 currentPage+=1;
                 endOfResult=false;
@@ -244,18 +247,19 @@ public class SearchResult extends AppCompatActivity {
             if (footer != null) {
                 webSitesListView.removeFooterView(footer);
             }
-            loadingMore = false;
             if (listItems.size() > 0) {
                 startIndex = startIndex + listItems.size();
                 setItems(listItems);
+            }else{
+                loadingMore=true;
+                Toast.makeText(getApplicationContext(),"No more Result",Toast.LENGTH_LONG).show();
             }
+            customAdapterForWebsiteList.notifyDataSetChanged();
             super.onPostExecute(listItems);
         }
 
         private void setItems(List<WebSites> listItems) {
             sitesArrayList.addAll(listItems);
-            loadingMore=false;
-            customAdapterForWebsiteList.notifyDataSetChanged();
         }
     }
     /**
