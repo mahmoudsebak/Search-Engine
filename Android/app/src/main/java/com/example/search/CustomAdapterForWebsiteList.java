@@ -35,6 +35,7 @@ public class CustomAdapterForWebsiteList extends ArrayAdapter {
         // set Website Description
         TextView description = (TextView) listItem.findViewById(R.id.textView2);
         description.setText(currentWebsite.getDescription());
+        description.setMaxLines(4);
         //Click listener to enter website
         title.setOnClickListener(new View.OnClickListener() {
             @Override

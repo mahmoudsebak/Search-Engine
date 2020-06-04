@@ -39,8 +39,11 @@ import org.json.JSONObject;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -102,10 +105,9 @@ public class SearchResult extends AppCompatActivity {
                 currentPage=1;
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
-                    editTextString=editTextString.replaceAll("\\s+","");
                     getResponse(
                             Request.Method.GET,
-                            ULRConnection.url+"/search/query?query="+editTextString+"&img=0"+"&page="+ 1,
+                            ULRConnection.url+"/search/query?query="+encodeValue(editTextString)+"&img=0"+"&page="+ 1,
                             null,
                             new VolleyCallback() {
                                 @Override
@@ -373,5 +375,13 @@ public class SearchResult extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+    // Method to encode a string value using `UTF-8` encoding scheme
+    private static String encodeValue(String value) {
+        try {
+            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+        } catch (UnsupportedEncodingException ex) {
+            throw new RuntimeException(ex.getCause());
+        }
     }
 }
