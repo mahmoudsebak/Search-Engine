@@ -47,7 +47,7 @@ public class ImageResultSearch extends AppCompatActivity {
     public static boolean endOfResult=false;
     public static String url,title;
     private static final int REQUEST_CODE = 1234;
-    boolean loadingMore = false;
+    static boolean loadingMore = false;
     Long startIndex = 0L;
     Long offset = 10L;
     View footerView;
@@ -57,7 +57,7 @@ public class ImageResultSearch extends AppCompatActivity {
 
     CustomAdapterForImageSearch customAdapterForImageSearch;
     GridView imageGridView;
-    ArrayList<String> sitesArrayList;
+    ArrayList<ImageClass> sitesArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -74,7 +74,7 @@ public class ImageResultSearch extends AppCompatActivity {
         // finally change the color
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
-        sitesArrayList =new ArrayList<String>();
+        sitesArrayList =new ArrayList<ImageClass>();
         imageGridView =findViewById(R.id.websSteGridView);
         footerView = ((LayoutInflater) getApplicationContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE)).inflate(R.layout.base_list_item_loading_footer, null, false);
         TextView textResult=findViewById(R.id.text_result1);
@@ -92,12 +92,15 @@ public class ImageResultSearch extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                loadingMore=false;
+                endOfResult=false;
+                currentPage=1;
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     editTextString=editTextString.replaceAll("\\s+","");
-                    /*getResponse(
+                    getResponse(
                             Request.Method.GET,
-                            ULRConnection.url+"/search/query?query="+editTextString+"&page="+ 1,
+                            ULRConnection.url+"/search/query?query="+editTextString+"&img=1"+"&page="+ 1,
                             null,
                             new VolleyCallback() {
                                 @Override
@@ -110,12 +113,14 @@ public class ImageResultSearch extends AppCompatActivity {
                                         // getting the result from the response
                                         JSONArray searchResult = obj.getJSONArray("result");
                                         for(int i=0;i<searchResult.length();i++) {
-                                            String currentImage= "";
+                                            ImageClass currentImage=new ImageClass();
                                             JSONObject current = searchResult.getJSONObject(i);
-                                            currentImage=current.getString("url");
+                                            currentImage.setImgSource(current.getString("image"));
+                                            currentImage.setUrl(current.getString("url"));
                                             sitesArrayList.add(currentImage);
                                         }
                                         customAdapterForImageSearch.notifyDataSetChanged();
+                                        imageGridView.setSelection(0);
                                         endOfResult= sitesArrayList.size() == 0;
                                     } catch (JSONException e) {
                                         if(obj.isNull("result"))
@@ -123,10 +128,7 @@ public class ImageResultSearch extends AppCompatActivity {
                                         e.printStackTrace();
                                     }
                                 }
-                            },editText.getText().toString(),Integer.toString(currentPage));*/
-                    for(int i=0;i<10;i++)
-                        sitesArrayList.add("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Starsinthesky.jpg/220px-Starsinthesky.jpg");
-                    customAdapterForImageSearch.notifyDataSetChanged();
+                            },editText.getText().toString(),Integer.toString(currentPage));
                 }
             }
         });
@@ -162,7 +164,7 @@ public class ImageResultSearch extends AppCompatActivity {
         });
 
     }
-    private class LoadMoreItemsTask extends AsyncTask<Void, Void, List<String>> {
+    private class LoadMoreItemsTask extends AsyncTask<Void, Void, List<ImageClass>> {
 
         private Activity activity;
         private View footer;
@@ -170,22 +172,21 @@ public class ImageResultSearch extends AppCompatActivity {
         private LoadMoreItemsTask(Activity activity) {
             this.activity = (Activity) activity;
             loadingMore = true;
-            footer = ((Activity) activity).getLayoutInflater().inflate(R.layout.base_list_item_loading_footer, null);
         }
 
         @Override
         protected void onPreExecute() {
             if(endOfResult){
-                imageGridView.setEnabled(false);
+                loadingMore=true;
                 Toast.makeText(getApplicationContext(),"No more result",Toast.LENGTH_LONG).show();
             }else {
-                imageGridView.setEnabled(true);
+                loadingMore=false;
             }
             super.onPreExecute();
         }
 
         @Override
-        protected List<String> doInBackground(Void... voids) {
+        protected List<ImageClass> doInBackground(Void... voids) {
             try {
                 return getNextItems(startIndex, offset);
             } catch (IOException | JSONException e) {
@@ -194,19 +195,20 @@ public class ImageResultSearch extends AppCompatActivity {
             return null;
         }
 
-        private List<String> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
-            ArrayList<String>arr=new ArrayList<>();
-            /*try {
+        private List<ImageClass> getNextItems(Long startIndex, Long offset) throws IOException, JSONException {
+            ArrayList<ImageClass>arr=new ArrayList<>();
+            try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ currentPage+1);
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&img=1"+"&page="+ (currentPage+1));
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
                 for(int i=0;i<searchResult.length();i++) {
-                    String currentImgURL;
+                    ImageClass currentImg=new ImageClass();
                     JSONObject current = searchResult.getJSONObject(i);
-                    currentImgURL=current.getString("url");
-                    arr.add(currentImgURL);
+                    currentImg.setUrl(current.getString("url"));
+                    currentImg.setImgSource(current.getString("image"));
+                    arr.add(currentImg);
                 }
             } catch (JSONException e) {
                 e.printStackTrace();
@@ -216,14 +218,12 @@ public class ImageResultSearch extends AppCompatActivity {
             else{
                 currentPage+=1;
                 endOfResult=false;
-            }*/
-            for(int i=0;i<10;i++)
-                arr.add("https://upload.wikimedia.org/wikipedia/commons/thumb/6/62/Starsinthesky.jpg/220px-Starsinthesky.jpg");
+            }
             return  arr;
         }
 
         @Override
-        protected void onPostExecute(List<String> listItems) {
+        protected void onPostExecute(List<ImageClass> listItems) {
             loadingMore = false;
             if (listItems.size() > 0) {
                 startIndex = startIndex + listItems.size();
@@ -232,7 +232,7 @@ public class ImageResultSearch extends AppCompatActivity {
             super.onPostExecute(listItems);
         }
 
-        private void setItems(List<String> listItems) {
+        private void setItems(List<ImageClass> listItems) {
             sitesArrayList.addAll(listItems);
             loadingMore=false;
             customAdapterForImageSearch.notifyDataSetChanged();

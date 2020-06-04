@@ -16,9 +16,9 @@ import com.squareup.picasso.Picasso;
 import java.util.ArrayList;
 
 public class CustomAdapterForImageSearch extends ArrayAdapter {
-    private ArrayList<String> webSitesArrayList;
+    private ArrayList<ImageClass> webSitesArrayList;
     private final Activity context;
-    public CustomAdapterForImageSearch(Activity context, ArrayList<String> list) {
+    public CustomAdapterForImageSearch(Activity context, ArrayList<ImageClass> list) {
         super(context, R.layout.img_result_view, list);
         this.context = context;
         webSitesArrayList = list;
@@ -27,19 +27,19 @@ public class CustomAdapterForImageSearch extends ArrayAdapter {
         View listItem = view;
         if (listItem == null)
             listItem = LayoutInflater.from(context).inflate(R.layout.img_result_view, parent, false);
-        final String currentWebsite = webSitesArrayList.get(position);
+        final ImageClass currentWebsite = webSitesArrayList.get(position);
         final View post=listItem;
 
         // set Website Image
         ImageView resultImage = listItem.findViewById(R.id.image_result);
-        Picasso.get().load(currentWebsite).into(resultImage);
+        Picasso.get().load(currentWebsite.getImgSource()).resize(100,100).into(resultImage);
 
         resultImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Toast.makeText(context,"You entered Website",Toast.LENGTH_LONG).show();
                 Intent i = new Intent(Intent.ACTION_VIEW);
-                i.setData(Uri.parse(currentWebsite));
+                i.setData(Uri.parse(currentWebsite.getUrl()));
                 context.startActivity(i);
             }
         });

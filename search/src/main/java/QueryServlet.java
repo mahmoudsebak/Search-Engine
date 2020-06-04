@@ -24,7 +24,7 @@ public class QueryServlet extends HttpServlet {
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
 		Gson gson = new Gson();
-		boolean isImage = (image != null && image == "1") ? true : false;
+		boolean isImage = (image != null && image.equals("1")) ? true : false;
 
 		ArrayList<HashMap<String, String>> result = QueryProcessor.ProcessQuery(query, page, isImage);
 		HashMap<String, Object> res = new HashMap<>();

@@ -97,12 +97,15 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                loadingMore=false;
+                endOfResult=false;
+                currentPage=1;
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     editTextString=editTextString.replaceAll("\\s+","");
                     getResponse(
                             Request.Method.GET,
-                            ULRConnection.url+"/search/query?query="+editTextString+"&page="+ 1,
+                            ULRConnection.url+"/search/query?query="+editTextString+"&img=0"+"&page="+ 1,
                             null,
                             new VolleyCallback() {
                                 @Override
@@ -186,11 +189,11 @@ public class SearchResult extends AppCompatActivity {
             webSitesListView.addFooterView(footer);
             if(endOfResult){
                 webSitesListView.removeFooterView(footer);
-                webSitesListView.setEnabled(false);
+                loadingMore=true;
                 Toast.makeText(getApplicationContext(),"No more result",Toast.LENGTH_LONG).show();
             }else {
                 webSitesListView.addFooterView(footer);
-                webSitesListView.setEnabled(true);
+                loadingMore=false;
             }
             super.onPreExecute();
         }
@@ -210,7 +213,7 @@ public class SearchResult extends AppCompatActivity {
             ArrayList<WebSites>arr=new ArrayList<>();
             try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&page="+ (currentPage+1));
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&img=0"+"&page="+ (currentPage+1));
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
