@@ -32,8 +32,12 @@ public class CustomAdapterForImageSearch extends ArrayAdapter {
 
         // set Website Image
         ImageView resultImage = listItem.findViewById(R.id.image_result);
-        Picasso.get().load(currentWebsite.getImgSource()).resize(100,100).into(resultImage);
-
+        String imageURL;
+        if(currentWebsite.getImgSource().equals(""))
+            imageURL="https://image.shutterstock.com/z/stock-vector-default-ui-image-placeholder-for-wireframes-for-apps-and-websites-1037719192.jpg";
+        else
+            imageURL=currentWebsite.getImgSource();
+        Picasso.get().load(imageURL).resize(100,100).placeholder(R.drawable.ic_broken_image_black_24dp).into(resultImage);
         resultImage.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
