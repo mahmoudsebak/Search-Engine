@@ -14,7 +14,12 @@ public class PageRank
         long startTime = System.nanoTime();
         ArrayList<Pair> connections = adapter.fetchAllLinks();
         HashMap<String,Double> ret = CalculatePageRank(connections);
-        adapter.updatePagesRanks(ret);
+        int i = 0;
+        for(HashMap.Entry<String,Double> entry : ret.entrySet())
+        {
+            adapter.updateURL(entry.getKey(), entry.getValue());
+            System.out.println(i++);
+        }
         long endTime = System.nanoTime();
 
         adapter.close();
