@@ -33,7 +33,7 @@ public class IndexerDbTest {
         System.out.println(arr);
         System.out.println();
 
-        arr = dbAdapter.queryImage("programming", 10, 1);
+        arr = dbAdapter.queryImage("programming", new String[]{"Competit", "program"}, 10, 1);
         System.out.println(arr);
         System.out.println();
 
@@ -41,7 +41,7 @@ public class IndexerDbTest {
         System.out.println(arr);
         System.out.println();
 
-        arr = dbAdapter.queryPhrase("competitive programming", 10, 1);
+        arr = dbAdapter.queryPhrase("competitive programming", new String[]{"Competit", "program"}, 10, 1);
         System.out.println(arr);
         System.out.println();
 

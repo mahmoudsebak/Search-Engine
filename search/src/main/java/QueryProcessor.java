@@ -2,7 +2,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class QueryProcessor {
-    public static final int PagesLimit = 10;
+    public static final int PAGES_LIMIT = 10;
     public static final int CONTENT_LIMIT = 200;
     /**
      * 
@@ -17,10 +17,14 @@ public class QueryProcessor {
         ArrayList<HashMap<String, String>> result = null;
 
         if (query.startsWith("\"") && query.endsWith("\"")) {
+            query = query.substring(1, query.length() - 1);
+            ArrayList<String> words = WordsExtractionProcess.ApplyingStemming(
+            WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
+            String[] queryWords = words.toArray(new String[0]);
             if (isImage)
-                result = adapter.queryImage(query.substring(1, query.length() - 1), PagesLimit, page);
+                result = adapter.queryImage(query, queryWords, PAGES_LIMIT, page);
             else {
-                result = adapter.queryPhrase(query.substring(1, query.length() - 1), PagesLimit, page);
+                result = adapter.queryPhrase(query, queryWords, PAGES_LIMIT, page);
                 for (HashMap<String, String> hashMap : result) {
                     String content = hashMap.get("content");
                     if (content != null) {
@@ -38,9 +42,9 @@ public class QueryProcessor {
                     WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
             String[] queryWords = words.toArray(new String[0]);
             if (isImage)
-                result = adapter.queryImage(queryWords, PagesLimit, page);
+                result = adapter.queryImage(queryWords, PAGES_LIMIT, page);
             else {
-                result = adapter.queryWords(queryWords, PagesLimit, page);
+                result = adapter.queryWords(queryWords, PAGES_LIMIT, page);
                 for (HashMap<String, String> hashMap : result) {
                     String content = hashMap.get("content");
                     if (content != null) {
