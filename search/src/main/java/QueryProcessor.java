@@ -30,10 +30,16 @@ public class QueryProcessor {
             else
                 result = adapter.queryWords(queryWords, PagesLimit, page);
         }
-        // for (HashMap<String,String> hashMap : result) {
-        //     String content=hashMap.get("content");
-        //     int index=content.indexOf(query, 0);
-        // }
+         for (HashMap<String,String> hashMap : result) {
+             String content=hashMap.get("content");
+             int index=content.indexOf(query, 0);
+             if(index!=-1){
+                content=content.substring(index, content.length());
+                hashMap.put("content",content);
+             }else{
+                hashMap.put("content",content);
+             }
+         }
         adapter.close();
         return result;
     }

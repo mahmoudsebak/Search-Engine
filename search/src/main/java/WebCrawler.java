@@ -23,7 +23,15 @@ public class WebCrawler {
         Set<String> seedPages  = new HashSet<String>();
         // seedPages.add("https://codeforces.com/");
         seedPages.add("https://www.geeksforgeeks.org/");
-        seedPages.add("http://odp.org/");
+        seedPages.add("https://www.imdb.com/");
+        seedPages.add("https://www.spotify.com/eg-en/");
+        seedPages.add("https://edition.cnn.com/");
+        seedPages.add("https://www.gamespot.com/");
+        seedPages.add("https://www.skysports.com/");
+        seedPages.add("https://cooking.nytimes.com/");
+        seedPages.add("https://en.unesco.org/");
+        seedPages.add("https://www.who.int/");
+
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
         ArrayList<String> visited = adapter.getCrawledURLs();
