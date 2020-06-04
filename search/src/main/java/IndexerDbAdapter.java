@@ -66,7 +66,7 @@ public class IndexerDbAdapter {
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
-            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
+            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
             COL_URL);
 
     public static final String TABLE3_LINKS_CREATE = String.format(
@@ -77,7 +77,7 @@ public class IndexerDbAdapter {
             TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE3_INDEX_CREATE = String.format(
-            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
+            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
             COL_SRC_URL, COL_DST_URL);
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
@@ -86,7 +86,7 @@ public class IndexerDbAdapter {
                 TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_URL, TABLE_URLS_NAME, COL_URL);
     
     private static final String TABLE4_INDEX_CREATE = String.format(
-                "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
+                "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
                 COL_URL, COL_IMAGE);
 
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
@@ -693,6 +693,30 @@ public class IndexerDbAdapter {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public int removeDuplicateImages() {
+        String sql = String.format(
+                "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
+                TABLE_IMAGES_NAME, TABLE_IMAGES_NAME, COL_ID, COL_ID, COL_URL, COL_URL, COL_IMAGE, COL_IMAGE);
+        try (Statement stmt = conn.createStatement()) {
+            return stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int removeDuplicateLinks() {
+        String sql = String.format(
+                "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
+                TABLE_LINKS_NAME, TABLE_LINKS_NAME, COL_ID, COL_ID, COL_SRC_URL, COL_SRC_URL, COL_DST_URL, COL_DST_URL);
+        try (Statement stmt = conn.createStatement()) {
+            return stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     public void deleteURL(String url) {
