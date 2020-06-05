@@ -74,7 +74,7 @@ public class QueryProcessor {
             }
             String BaseURL = "";
             if(url != null)
-                BaseURL = url.getProtocol() + "://" + url.getHost() + "/";
+                BaseURL = url.getProtocol() + "://" + url.getHost();
             res.add(new Pair<Integer,HashMap<String, String>>(adapter.getUserURLFreq(BaseURL),entry));
         }
 

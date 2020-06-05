@@ -13,7 +13,7 @@ public class PersonalizedServlet extends HttpServlet {
 	protected void doGet(HttpServletRequest request)
 			throws ServletException, IOException {
         URL url = new URL(request.getParameter("url"));
-        String BaseLink = url.getProtocol() + "://" + url.getHost() + "/";
+        String BaseLink = url.getProtocol() + "://" + url.getHost();
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
         adapter.addUserURL(BaseLink);

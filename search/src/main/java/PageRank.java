@@ -53,7 +53,7 @@ public class PageRank
             }
             String BaseURL = "";
             if(url != null)
-                BaseURL = url.getProtocol() + "://" + url.getHost() + "/";
+                BaseURL = url.getProtocol() + "://" + url.getHost();
 
             if(BaseURL.equals("") || dst.equals(BaseURL) || dst.equals(src))    // ignore back_ward connections to the parent link & self connections
                 continue;
