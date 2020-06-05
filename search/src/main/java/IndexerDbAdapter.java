@@ -96,7 +96,7 @@ public class IndexerDbAdapter {
                 COL_URL, COL_IMAGE);
 
     private static final String TABLE5_QUERIES_CREATE = String.format(
-            "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s TEXT)", TABLE_QUERIES_NAME, COL_ID,
+            "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s TEXT UNIQUE)", TABLE_QUERIES_NAME, COL_ID,
             COL_QUERY);
 
     private static final String TABLE6_USER_URLS_CREATE = String.format(

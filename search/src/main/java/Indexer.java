@@ -42,6 +42,7 @@ public class Indexer {
             }
             adapter.setIndexedURL(url, true);
         }
+        System.out.println("Finished Indexing all links");
         adapter.close();
     }
 
