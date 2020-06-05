@@ -12,7 +12,7 @@ public class PageRank
         adapter.open();
 
         long startTime = System.nanoTime();
-        ArrayList<Pair> connections = adapter.fetchAllLinks();
+        ArrayList<Pair<String,String>> connections = adapter.fetchAllLinks();
         HashMap<String,Double> ret = CalculatePageRank(connections);
         int i = 0;
         for(HashMap.Entry<String,Double> entry : ret.entrySet())
@@ -30,7 +30,7 @@ public class PageRank
      * @param connections: list of pairs <src url,dst url>
      * @return map of each url and its pageRank
      */
-    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair> connections)
+    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair<String,String>> connections)
     {
         HashMap<String,Double> PagesRank = new HashMap<String, Double>();
         HashMap<String,Integer> outDegree = new HashMap<String, Integer>();

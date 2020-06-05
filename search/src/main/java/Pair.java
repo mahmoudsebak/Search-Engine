@@ -1,12 +1,8 @@
-public class Pair
+public class Pair<T,S>
 {
-    public String first,second;
-    public Pair()
-    {
-        first = "";
-        second = "";
-    }
-    public Pair(String a,String b)
+    public T first;
+    public S second;
+    public Pair(T a,S b)
     {
         first = a;
         second = b;

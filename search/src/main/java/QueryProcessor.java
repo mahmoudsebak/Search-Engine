@@ -4,6 +4,7 @@ import java.util.HashMap;
 public class QueryProcessor {
     public static final int PAGES_LIMIT = 10;
     public static final int CONTENT_LIMIT = 200;
+
     /**
      * 
      * @param query : search query(sentence)
@@ -61,6 +62,31 @@ public class QueryProcessor {
                 }
             }
         }
+        ArrayList<Pair<Integer,HashMap<String, String>>> res = new ArrayList<>();
+        for(HashMap<String,String> entry : result)
+		{
+			String url = entry.get("url");
+			String BaseURL = url.substring(0,url.indexOf('/')+1);
+            res.add(new Pair<Integer,HashMap<String, String>>(adapter.getUserURLFreq(BaseURL),entry));
+        }
+
+        for(int i=0;i<res.size();i++)
+        {
+            int mx_idx = i;
+            for(int j=i+1;j<res.size();j++)
+            {
+                if(res.get(j).first > res.get(mx_idx).first)
+                    mx_idx = j;
+            }
+            Pair<Integer,HashMap<String, String>> temp = res.get(i);
+            res.set(i,res.get(mx_idx));
+            res.set(mx_idx, temp);
+        }
+
+        int idx = 0;
+        for(Pair<Integer,HashMap<String,String>> entry : res)
+            result.set(idx++, entry.second);
+            
         adapter.close();
         return result;
     }

@@ -704,14 +704,14 @@ public class IndexerDbAdapter {
     /**
      * @return all links that are used in page rank
      */
-    public ArrayList<Pair> fetchAllLinks() {
+    public ArrayList<Pair<String,String>> fetchAllLinks() {
         String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL, TABLE_LINKS_NAME);
         try (Statement stmt = conn.createStatement()) {
 
             try (ResultSet rs = stmt.executeQuery(sql)) {
-                ArrayList<Pair> ret = new ArrayList<Pair>();
+                ArrayList<Pair<String,String>> ret = new ArrayList<>();
                 while (rs.next()) {
-                    Pair elem = new Pair(rs.getString(1), rs.getString(2));
+                    Pair<String,String> elem = new Pair<String,String>(rs.getString(1), rs.getString(2));
                     ret.add(elem);
                 }
                 return ret;
