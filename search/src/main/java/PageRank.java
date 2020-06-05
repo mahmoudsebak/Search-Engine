@@ -1,5 +1,7 @@
 import java.util.HashMap;
 import java.util.HashSet;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 
@@ -43,7 +45,17 @@ public class PageRank
             PagesRank.put(src,1.0);
             PagesRank.put(dst,1.0);
             
-            if(dst.equals(src.substring(0,src.indexOf('/')+1)) || dst.equals(src))    // ignore back_ward connections to the parent link & self connections
+            URL url = null;
+            try {
+                url = new URL(src);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            String BaseURL = "";
+            if(url != null)
+                BaseURL = url.getProtocol() + "://" + url.getHost() + "/";
+
+            if(BaseURL.equals("") || dst.equals(BaseURL) || dst.equals(src))    // ignore back_ward connections to the parent link & self connections
                 continue;
 
             if(!Pages.containsKey(dst))

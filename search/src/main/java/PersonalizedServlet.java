@@ -1,4 +1,6 @@
 import java.io.IOException;
+import java.net.URL;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -10,8 +12,8 @@ public class PersonalizedServlet extends HttpServlet {
 
 	protected void doGet(HttpServletRequest request)
 			throws ServletException, IOException {
-		String url = request.getParameter("url");
-        String BaseLink = url.substring(0,url.indexOf('/')+1);
+        URL url = new URL(request.getParameter("url"));
+        String BaseLink = url.getProtocol() + "://" + url.getHost() + "/";
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
         adapter.addUserURL(BaseLink);

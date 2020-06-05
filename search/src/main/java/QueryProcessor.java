@@ -1,3 +1,5 @@
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -20,7 +22,7 @@ public class QueryProcessor {
         if (query.startsWith("\"") && query.endsWith("\"")) {
             query = query.substring(1, query.length() - 1);
             ArrayList<String> words = WordsExtractionProcess.ApplyingStemming(
-            WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
+                    WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
             String[] queryWords = words.toArray(new String[0]);
             if (isImage)
                 result = adapter.queryImage(query, queryWords, PAGES_LIMIT, page);
@@ -62,11 +64,17 @@ public class QueryProcessor {
                 }
             }
         }
-        ArrayList<Pair<Integer,HashMap<String, String>>> res = new ArrayList<>();
-        for(HashMap<String,String> entry : result)
-		{
-			String url = entry.get("url");
-			String BaseURL = url.substring(0,url.indexOf('/')+1);
+        ArrayList<Pair<Integer, HashMap<String, String>>> res = new ArrayList<>();
+        for (HashMap<String, String> entry : result) {
+            URL url = null;
+            try {
+                url = new URL(entry.get("url"));
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            String BaseURL = "";
+            if(url != null)
+                BaseURL = url.getProtocol() + "://" + url.getHost() + "/";
             res.add(new Pair<Integer,HashMap<String, String>>(adapter.getUserURLFreq(BaseURL),entry));
         }
 
