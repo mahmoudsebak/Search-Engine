@@ -215,8 +215,10 @@ public class ImageResultSearch extends AppCompatActivity {
             } catch (JSONException e) {
                 e.printStackTrace();
             }
-            if(arr.size()==0)
+            if(arr.size()==0){
                 endOfResult=true;
+                loadingMore=true;
+            }
             else{
                 currentPage+=1;
                 endOfResult=false;
@@ -226,18 +228,19 @@ public class ImageResultSearch extends AppCompatActivity {
 
         @Override
         protected void onPostExecute(List<ImageClass> listItems) {
-            loadingMore = false;
             if (listItems.size() > 0) {
                 startIndex = startIndex + listItems.size();
                 setItems(listItems);
+            }else{
+                loadingMore=true;
+                Toast.makeText(getApplicationContext(),"No more Result",Toast.LENGTH_LONG).show();
             }
+            customAdapterForImageSearch.notifyDataSetChanged();
             super.onPostExecute(listItems);
         }
 
         private void setItems(List<ImageClass> listItems) {
             sitesArrayList.addAll(listItems);
-            loadingMore=false;
-            customAdapterForImageSearch.notifyDataSetChanged();
         }
     }
     /**

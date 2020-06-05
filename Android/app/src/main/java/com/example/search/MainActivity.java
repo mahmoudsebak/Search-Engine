@@ -81,11 +81,10 @@ public class MainActivity extends AppCompatActivity {
 
         editText=( AutoCompleteTextView)findViewById(R.id.editText);
 
-        String[] COUNTRIES = new String[] {
-                "Belgium", "France", "Italy", "Germany", "Spain"
-        };
+        String suggestions[]=new String[100];
+        loadSuggestions(suggestions);
         ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_dropdown_item_1line, COUNTRIES);
+                android.R.layout.simple_dropdown_item_1line, suggestions);
         editText.setAdapter(suggestionAdapter);
 
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
@@ -239,5 +238,43 @@ public class MainActivity extends AppCompatActivity {
             return false;
         }
         return true;
+    }
+    public void loadSuggestions(String suggestions[]){
+        getResponse(
+                Request.Method.GET,
+                ULRConnection.url+"/search/query?query="+"&page="+"1",
+                null,
+                new VolleyCallback() {
+                    @Override
+                    public void onSuccessResponse(String response) throws JSONException {
+                        JSONObject obj= new JSONObject(response);;
+                        try {
+                            if(obj.getJSONArray("result").length()!=0){
+                                ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+                                // converting response to json object
+                                // if no error in response
+                                // getting the result from the response
+                                JSONArray searchResult = obj.getJSONArray("result");
+                                for(int i=0;i<searchResult.length();i++) {
+                                    WebSites currentWebsite=new WebSites();
+                                    JSONObject current = searchResult.getJSONObject(i);
+                                    currentWebsite.setUrl(current.getString("url"));
+                                    currentWebsite.setDescription(current.getString("content"));
+                                    currentWebsite.setHeader(current.getString("title"));
+                                    webSitesArrayList.add(currentWebsite);
+                                }
+                                Intent i=new Intent(MainActivity.this,SearchResult.class);
+                                i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
+                                i.putExtra("TypedWord",editText.getText().toString());
+                                startActivity(i);
+                            }else
+                                Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                        } catch (JSONException e) {
+                            if(obj.isNull("result"))
+                                Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+                    }
+                },editText.getText().toString(),"1");
     }
 }
