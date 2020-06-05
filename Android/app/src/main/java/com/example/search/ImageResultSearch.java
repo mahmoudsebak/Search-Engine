@@ -55,7 +55,6 @@ public class ImageResultSearch extends AppCompatActivity {
     public static String url,title;
     private static final int REQUEST_CODE = 1234;
     static boolean loadingMore = false;
-    public static String []suggestions=new String[1000];
     Long startIndex = 0L;
     Long offset = 10L;
     View footerView;
@@ -90,9 +89,6 @@ public class ImageResultSearch extends AppCompatActivity {
         textResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-               /* Intent i=new Intent(getApplicationContext(),SearchResult.class);
-                i.putExtra("toText",editText.getText());
-                startActivity(i);*/
                finish();
             }
         });
@@ -115,7 +111,7 @@ public class ImageResultSearch extends AppCompatActivity {
                                     @Override
                                     public void onSuccessResponse(String response) throws JSONException {
                                         JSONObject obj= new JSONObject(response);
-                                        loadSuggestions(suggestions);
+                                        loadSuggestions();
                                     }
                                 },editText.getText().toString(),"");}
                 });
@@ -163,11 +159,8 @@ public class ImageResultSearch extends AppCompatActivity {
             }
         });
         editText=findViewById(R.id.editText2);
-        loadSuggestions(suggestions);
+        loadSuggestions();
         editText.setText(getIntent().getStringExtra("toImage"));
-        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_dropdown_item_1line, suggestions);
-        editText.setAdapter(suggestionAdapter);
         customAdapterForImageSearch =new CustomAdapterForImageSearch(this, sitesArrayList);
         imageGridView.setAdapter(customAdapterForImageSearch);
         imageGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -401,7 +394,8 @@ public class ImageResultSearch extends AppCompatActivity {
             throw new RuntimeException(ex.getCause());
         }
     }
-    public void loadSuggestions(String suggestions[]){
+    public void loadSuggestions(){
+        ArrayList<String> searchArrayList= new ArrayList<String>();
         getResponse(
                 Request.Method.GET,
                 ULRConnection.url+"/search/getSuggestions?",
@@ -418,7 +412,7 @@ public class ImageResultSearch extends AppCompatActivity {
                                 // getting the result from the response
                                 JSONArray searchResult = obj.getJSONArray("result");
                                 for(int i=0;i<searchResult.length();i++) {
-                                    suggestions[i] = searchResult.getString(i);
+                                    searchArrayList.add(searchResult.getString(i));
                                 }
                             }else
                                 Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
@@ -427,6 +421,9 @@ public class ImageResultSearch extends AppCompatActivity {
                                 Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
+                        AutoCompleteAdapter adapter = new AutoCompleteAdapter(getApplicationContext(), android.R.layout.simple_dropdown_item_1line, android.R.id.text1, searchArrayList);
+                        editText.setAdapter(adapter);
+                        editText.setThreshold(1);
                     }
                 },editText.getText().toString(),"1");
     }

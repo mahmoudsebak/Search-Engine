@@ -61,7 +61,6 @@ import static java.security.AccessController.getContext;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 1234;
     public static String url,title;
-    public static final String[] suggestions=new String[1000];
     AutoCompleteTextView editText;
     ImageButton voiceSearch;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -82,7 +81,7 @@ public class MainActivity extends AppCompatActivity {
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
         editText=( AutoCompleteTextView)findViewById(R.id.editText);
-        loadSuggestions(suggestions);
+        loadSuggestions();
 
 
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
@@ -99,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                                     @Override
                                     public void onSuccessResponse(String response) throws JSONException {
                                         JSONObject obj= new JSONObject(response);
-                                        loadSuggestions(suggestions);
+                                        loadSuggestions();
                                     }
                                 },editText.getText().toString(),"");}
                 });
@@ -252,7 +251,8 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-    public void loadSuggestions(String[] suggestions){
+    public void loadSuggestions(){
+        ArrayList<String> searchArrayList= new ArrayList<String>();
         getResponse(
                 Request.Method.GET,
                 ULRConnection.url+"/search/getSuggestions?",
@@ -269,7 +269,7 @@ public class MainActivity extends AppCompatActivity {
                                 // getting the result from the response
                                 JSONArray searchResult = obj.getJSONArray("result");
                                 for(int i=0;i<searchResult.length();i++) {
-                                    suggestions[i]=searchResult.getString(i);
+                                    searchArrayList.add(searchResult.getString(i));
                                 }
                             }else
                                 Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
@@ -278,11 +278,11 @@ public class MainActivity extends AppCompatActivity {
                                 Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
-                        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(getApplicationContext(),
-                                android.R.layout.simple_dropdown_item_1line, suggestions);
+                        AutoCompleteAdapter adapter = new AutoCompleteAdapter(getApplicationContext(), android.R.layout.simple_dropdown_item_1line, android.R.id.text1, searchArrayList);
+                        editText.setAdapter(adapter);
                         editText.setThreshold(1);
-                        editText.setAdapter(suggestionAdapter);
                     }
                 },editText.getText().toString(),"1");
+
     }
 }
