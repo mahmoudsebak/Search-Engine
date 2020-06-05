@@ -90,9 +90,10 @@ public class ImageResultSearch extends AppCompatActivity {
         textResult.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Intent i=new Intent(getApplicationContext(),SearchResult.class);
+               /* Intent i=new Intent(getApplicationContext(),SearchResult.class);
                 i.putExtra("toText",editText.getText());
-                startActivity(i);
+                startActivity(i);*/
+               finish();
             }
         });
 
