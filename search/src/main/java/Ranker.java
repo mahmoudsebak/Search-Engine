@@ -109,7 +109,8 @@ public class Ranker {
      */
     public static double CalculateGeographicLocationScore(String url)
     {
-        String ext = url.substring(url.lastIndexOf('.'));
+        int idx = url.lastIndexOf('.');
+        String ext = url.substring(idx , idx + 3);
         if(extensionsDistance.containsKey(ext))
             return 1.0-(extensionsDistance.get(ext)/maxDistance);
         return 0.0;
