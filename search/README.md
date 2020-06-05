@@ -6,4 +6,7 @@
    1. `mvn compile`
    2. `mvn package`
 5. deploy the `search.war` file (can be found in `target` folder) on `tomcat`
+6. run `WebCrawler` and give it the number of threads as a command argument
+7. run `Indexer`
+8. run `PageRank`
    

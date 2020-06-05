@@ -96,7 +96,6 @@ class CrawlerRunnable implements Runnable {
 class Crawler {
     private IndexerDbAdapter adapter;
     private ConcurrentHashMap <String, Boolean> pagesVisited;
-    private ConcurrentHashMap <String, String> src;
     private LinkedBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
     private static final int MAX_PAGES_TO_BE_CRAWLED = 5000;
@@ -104,7 +103,6 @@ class Crawler {
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
         this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
-        this.src = new ConcurrentHashMap<String, String>();
         this.pagesToVisit = new LinkedBlockingQueue<String>();
         this.isRecraler = isRecrawler;
         this.adapter = adapter;
@@ -167,7 +165,7 @@ class Crawler {
      * @return 0 if the url is crawled before, 1 if the max number of urls are added in database and 2 if it is valid to visit the url
      */
     public synchronized int visitURL(String url) {
-        if (!this.isRecraler && this.pagesVisited.size() == MAX_PAGES_TO_BE_CRAWLED) return 1;  
+        if (!this.isRecraler && this.pagesVisited.size() + this.pagesToVisit.size() >= MAX_PAGES_TO_BE_CRAWLED) return 1;
         if (this.isRecraler && this.pagesVisited.size() == MAX_PAGES_TO_BE_RECRAWLED) return 1;  
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         try {
@@ -178,8 +176,6 @@ class Crawler {
         this.pagesVisited.put(url, true);
         this.adapter.addURL(url);
         this.adapter.crawlURL(url);
-        if(src.containsKey(url))
-            this.adapter.addLink(src.get(url), url);
         System.out.println("Visited " + this.getPagesVisitedLength() + " page(s)");
         System.out.println("To Visit " + this.getPagesToVisitLength() + " page(s)");
         return 2;
@@ -211,7 +207,8 @@ class Crawler {
                 continue;
             }
             this.pagesToVisit.offer(page);
-            this.src.put(page, url);
+            this.adapter.addURL(page);
+            this.adapter.addLink(url, page);
         }
         
     }
