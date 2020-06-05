@@ -5,6 +5,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
 import android.app.Activity;
+import android.content.ContentUris;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Build;
@@ -60,6 +61,7 @@ import static java.security.AccessController.getContext;
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 1234;
     public static String url,title;
+    public static final String[] suggestions=new String[1000];
     AutoCompleteTextView editText;
     ImageButton voiceSearch;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
@@ -80,16 +82,28 @@ public class MainActivity extends AppCompatActivity {
         window.setStatusBarColor(ContextCompat.getColor(this, R.color.dark_cyan));
 
         editText=( AutoCompleteTextView)findViewById(R.id.editText);
-
-        String suggestions[]=new String[100];
         loadSuggestions(suggestions);
-        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_dropdown_item_1line, suggestions);
-        editText.setAdapter(suggestionAdapter);
+
 
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                Thread sendQuery=new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getResponse(
+                                Request.Method.POST,
+                                ULRConnection.url+"/search/addSuggestion?",
+                                null,
+                                new VolleyCallback() {
+                                    @Override
+                                    public void onSuccessResponse(String response) throws JSONException {
+                                        JSONObject obj= new JSONObject(response);
+                                        loadSuggestions(suggestions);
+                                    }
+                                },editText.getText().toString(),"");}
+                });
+                sendQuery.start();
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     editTextString=editTextString.replaceAll("\\s+","");
@@ -175,7 +189,7 @@ public class MainActivity extends AppCompatActivity {
             final VolleyCallback callback,final  String query,final String pageNumber) {
         StringRequest stringRequest =
                 new StringRequest(
-                        Request.Method.GET,
+                        method,
                         url,
                         new Response.Listener<String>() {
                             @Override
@@ -224,8 +238,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     protected Map<String, String> getParams() throws AuthFailureError {
                         Map<String, String> params = new HashMap<>();
-                        params.put("query", query);
-                        params.put("page", pageNumber);
+                        params.put("suggestion", query);
                         return params;
                     }
                 };
@@ -239,10 +252,10 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
-    public void loadSuggestions(String suggestions[]){
+    public void loadSuggestions(String[] suggestions){
         getResponse(
                 Request.Method.GET,
-                ULRConnection.url+"/search/query?query="+"&page="+"1",
+                ULRConnection.url+"/search/getSuggestions?",
                 null,
                 new VolleyCallback() {
                     @Override
@@ -256,24 +269,19 @@ public class MainActivity extends AppCompatActivity {
                                 // getting the result from the response
                                 JSONArray searchResult = obj.getJSONArray("result");
                                 for(int i=0;i<searchResult.length();i++) {
-                                    WebSites currentWebsite=new WebSites();
-                                    JSONObject current = searchResult.getJSONObject(i);
-                                    currentWebsite.setUrl(current.getString("url"));
-                                    currentWebsite.setDescription(current.getString("content"));
-                                    currentWebsite.setHeader(current.getString("title"));
-                                    webSitesArrayList.add(currentWebsite);
+                                    suggestions[i]=searchResult.getString(i);
                                 }
-                                Intent i=new Intent(MainActivity.this,SearchResult.class);
-                                i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
-                                i.putExtra("TypedWord",editText.getText().toString());
-                                startActivity(i);
                             }else
-                                Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
                         } catch (JSONException e) {
                             if(obj.isNull("result"))
-                                Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
                             e.printStackTrace();
                         }
+                        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(getApplicationContext(),
+                                android.R.layout.simple_dropdown_item_1line, suggestions);
+                        editText.setThreshold(1);
+                        editText.setAdapter(suggestionAdapter);
                     }
                 },editText.getText().toString(),"1");
     }

@@ -18,12 +18,14 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AbsListView;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.NoConnectionError;
 import com.android.volley.Request;
@@ -45,13 +47,16 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class SearchResult extends AppCompatActivity {
     public static boolean endOfResult=false;
     public static String url,title;
     private static final int REQUEST_CODE = 1234;
+    public static String []suggestions=new String[1000];
     boolean loadingMore = false;
     Long startIndex = 0L;
     Long offset = 10L;
@@ -100,9 +105,26 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                loadSuggestions(suggestions);
                 loadingMore=false;
                 endOfResult=false;
                 currentPage=1;
+                Thread sendQuery=new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getResponse(
+                                Request.Method.POST,
+                                ULRConnection.url+"/search/addSuggestion?",
+                                null,
+                                new VolleyCallback() {
+                                    @Override
+                                    public void onSuccessResponse(String response) throws JSONException {
+                                        JSONObject obj= new JSONObject(response);
+                                        loadSuggestions(suggestions);
+                                    }
+                                },editText.getText().toString(),"");}
+                });
+                sendQuery.start();
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     getResponse(
@@ -151,6 +173,10 @@ public class SearchResult extends AppCompatActivity {
         });
         editText=findViewById(R.id.editText1);
         editText.setText(getIntent().getStringExtra("TypedWord"));
+        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_dropdown_item_1line, suggestions);
+        editText.setAdapter(suggestionAdapter);
+
         customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sitesArrayList);
         webSitesListView.setAdapter(customAdapterForWebsiteList);
         webSitesListView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -323,7 +349,7 @@ public class SearchResult extends AppCompatActivity {
             final VolleyCallback callback,final  String query,final String pageNumber) {
         StringRequest stringRequest =
                 new StringRequest(
-                        Request.Method.GET,
+                        method,
                         url,
                         new Response.Listener<String>() {
                             @Override
@@ -369,6 +395,12 @@ public class SearchResult extends AppCompatActivity {
                                 error.printStackTrace();
                             }
                         }) {
+                    @Override
+                    protected Map<String, String> getParams() throws AuthFailureError {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("suggestion", query);
+                        return params;
+                    }
                 };
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
@@ -387,5 +419,34 @@ public class SearchResult extends AppCompatActivity {
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex.getCause());
         }
+    }
+    public void loadSuggestions(String suggestions[]){
+        getResponse(
+                Request.Method.GET,
+                ULRConnection.url+"/search/getSuggestions?",
+                null,
+                new VolleyCallback() {
+                    @Override
+                    public void onSuccessResponse(String response) throws JSONException {
+                        JSONObject obj= new JSONObject(response);;
+                        try {
+                            if(obj.getJSONArray("result").length()!=0){
+                                ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+                                // converting response to json object
+                                // if no error in response
+                                // getting the result from the response
+                                JSONArray searchResult = obj.getJSONArray("result");
+                                for(int i=0;i<searchResult.length();i++) {
+                                    suggestions[i] = searchResult.getString(i);
+                                }
+                            }else
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
+                        } catch (JSONException e) {
+                            if(obj.isNull("result"))
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+                    }
+                },editText.getText().toString(),"1");
     }
 }
