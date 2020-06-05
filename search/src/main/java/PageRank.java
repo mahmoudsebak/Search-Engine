@@ -20,7 +20,7 @@ public class PageRank
         for(HashMap.Entry<String,Double> entry : ret.entrySet())
         {
             adapter.updateURL(entry.getKey(), entry.getValue());
-            System.out.println(i++);
+            System.out.println("Page " + i++);
         }
         long endTime = System.nanoTime();
 
