@@ -37,6 +37,8 @@ public class IndexerDbAdapter {
 
     public static final String COL_QUERY = "query";
 
+    public static final String COL_FREQ = "freq";
+
     private Connection conn;
     private static final String DATABASE_NAME = "dba_search_indexer";
     private static final String USERNAME = "root";
@@ -51,6 +53,7 @@ public class IndexerDbAdapter {
     private static final String TABLE_IMAGES_NAME = "tb4_images";
     private static final String TABLE_IMAGES_INDEX_NAME = "tb4_images_index";
     private static final String TABLE_QUERIES_NAME = "tb5_queries";
+    private static final String TABLE_USER_URLS_NAME = "tb6_user_urls";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -96,6 +99,10 @@ public class IndexerDbAdapter {
             "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s TEXT)", TABLE_QUERIES_NAME, COL_ID,
             COL_QUERY);
 
+    private static final String TABLE6_USER_URLS_CREATE = String.format(
+            "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256) UNIQUE, %s INTEGER)",
+            TABLE_USER_URLS_NAME, COL_ID, COL_URL, COL_FREQ);
+
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
     public IndexerDbAdapter() {
@@ -117,6 +124,7 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE4_IMAGES_CREATE);
             stmt.addBatch(TABLE4_INDEX_CREATE);
             stmt.addBatch(TABLE5_QUERIES_CREATE);
+            stmt.addBatch(TABLE6_USER_URLS_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -745,6 +753,44 @@ public class IndexerDbAdapter {
             e.printStackTrace();
         }
         return ret;
+    }
+
+    /**
+     * add urls that the user clicks on, this function is used in personalized search
+     * @param url the url that the user clicked on
+     */
+    public void addUserURL(String url) {
+        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, 1) ON DUPLICATE KEY UPDATE %s = VALUES(%s)+1",
+                TABLE_USER_URLS_NAME, COL_URL, COL_FREQ, COL_FREQ, COL_FREQ);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, url);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 
+     * @param url the url to return its frequency
+     * @return the frequency of clicks on url
+     */
+    public int getUserURLFreq(String url) {
+        String sql = String.format("SELECT %s FROM %s WHERE %s = ?", COL_FREQ, TABLE_USER_URLS_NAME, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, url);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
     /**
