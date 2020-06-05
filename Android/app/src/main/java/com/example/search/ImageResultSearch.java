@@ -226,7 +226,7 @@ public class ImageResultSearch extends AppCompatActivity {
             ArrayList<ImageClass>arr=new ArrayList<>();
             try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&img=1"+"&page="+ (currentPage+1));
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+encodeValue(editText.getText().toString())+"&img=1"+"&page="+ (currentPage+1));
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
@@ -395,7 +395,7 @@ public class ImageResultSearch extends AppCompatActivity {
     // Method to encode a string value using `UTF-8` encoding scheme
     private static String encodeValue(String value) {
         try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+            return URLEncoder.encode(value, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex.getCause());
         }
