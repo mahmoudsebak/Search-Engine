@@ -14,14 +14,18 @@ public class PageRank
         adapter.open();
 
         long startTime = System.nanoTime();
+        
         ArrayList<Pair<String,String>> connections = adapter.fetchAllLinks();
-        HashMap<String,Double> ret = CalculatePageRank(connections);
+        HashMap<String,Double> ret = CalculatePageRank(connections,adapter.getDocumentsNum());
+        adapter.resetPagesRank();
+
         int i = 0;
         for(HashMap.Entry<String,Double> entry : ret.entrySet())
         {
             adapter.updateURL(entry.getKey(), entry.getValue());
             System.out.println("Page " + i++);
         }
+
         long endTime = System.nanoTime();
 
         adapter.close();
@@ -32,7 +36,7 @@ public class PageRank
      * @param connections: list of pairs <src url,dst url>
      * @return map of each url and its pageRank
      */
-    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair<String,String>> connections)
+    public static HashMap<String,Double> CalculatePageRank(ArrayList<Pair<String,String>> connections,int total_links)
     {
         HashMap<String,Double> PagesRank = new HashMap<String, Double>();
         HashMap<String,Integer> outDegree = new HashMap<String, Integer>();
@@ -70,6 +74,9 @@ public class PageRank
             else
                 outDegree.put(src,1);
         }
+
+        for(HashMap.Entry<String,Double> entry : PagesRank.entrySet())
+                entry.setValue(1.0/total_links);
 
         for(int i = 0 ; i < Iterations ; i++)
         {

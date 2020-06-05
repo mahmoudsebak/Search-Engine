@@ -203,7 +203,7 @@ public class IndexerDbAdapter {
         }
         return true;
     }
-
+    
     /**
      * change the crawling date of a url and set indexed attribute to false
      * 
