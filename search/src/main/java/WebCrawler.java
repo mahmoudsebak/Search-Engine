@@ -226,6 +226,9 @@ class Crawler {
         if (url == null) {
             return null;
         }
+        if(url.indexOf('?') != -1)
+            url = url.substring(0, url.indexOf('?'));
+
         URI uri = new URI(url);
         if (!uri.isAbsolute()) {
             throw new URISyntaxException(url, "Not an absolute URL");
@@ -234,15 +237,10 @@ class Crawler {
         String path = uri.getPath();
         if (path != null) {
             path = path.replaceAll("//*/", "/");
-            if (path.length() > 0 && path.charAt(path.length() - 1) == '/') {
+            if (path.length() > 0 && path.charAt(path.length() - 1) == '/')
                 path = path.substring(0, path.length() - 1);
-            }
         }
-        String host = uri.getHost();
-        if (host != null && !host.toLowerCase().contains("www.")) {
-            host = "www." + host;
-        }
-        return new URI(uri.getScheme(), uri.getUserInfo(), host, uri.getPort(),
+        return new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(), uri.getPort(),
                 path, uri.getQuery(), uri.getFragment()).toString();
     }
 
