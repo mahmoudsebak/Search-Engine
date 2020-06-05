@@ -17,12 +17,14 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AbsListView;
+import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
 import android.widget.GridView;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
 import com.android.volley.NetworkResponse;
 import com.android.volley.NoConnectionError;
 import com.android.volley.Request;
@@ -44,13 +46,16 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class ImageResultSearch extends AppCompatActivity {
     public static boolean endOfResult=false;
     public static String url,title;
     private static final int REQUEST_CODE = 1234;
     static boolean loadingMore = false;
+    public static String []suggestions=new String[1000];
     Long startIndex = 0L;
     Long offset = 10L;
     View footerView;
@@ -98,6 +103,22 @@ public class ImageResultSearch extends AppCompatActivity {
                 loadingMore=false;
                 endOfResult=false;
                 currentPage=1;
+                Thread sendQuery=new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        getResponse(
+                                Request.Method.POST,
+                                ULRConnection.url+"/search/addSuggestion?",
+                                null,
+                                new VolleyCallback() {
+                                    @Override
+                                    public void onSuccessResponse(String response) throws JSONException {
+                                        JSONObject obj= new JSONObject(response);
+                                        loadSuggestions(suggestions);
+                                    }
+                                },editText.getText().toString(),"");}
+                });
+                sendQuery.start();
                 if(checkFieldsForEmptyValues(editText.getText().toString())){
                     String editTextString=editText.getText().toString();
                     getResponse(
@@ -141,7 +162,11 @@ public class ImageResultSearch extends AppCompatActivity {
             }
         });
         editText=findViewById(R.id.editText2);
+        loadSuggestions(suggestions);
         editText.setText(getIntent().getStringExtra("toImage"));
+        ArrayAdapter<String> suggestionAdapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_dropdown_item_1line, suggestions);
+        editText.setAdapter(suggestionAdapter);
         customAdapterForImageSearch =new CustomAdapterForImageSearch(this, sitesArrayList);
         imageGridView.setAdapter(customAdapterForImageSearch);
         imageGridView.setOnScrollListener(new AbsListView.OnScrollListener() {
@@ -201,7 +226,7 @@ public class ImageResultSearch extends AppCompatActivity {
             ArrayList<ImageClass>arr=new ArrayList<>();
             try {
                 // converting response to json object
-                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+editText.getText().toString()+"&img=1"+"&page="+ (currentPage+1));
+                JSONObject obj = getJSONObjectFromURL(ULRConnection.url+"/search/query?query="+encodeValue(editText.getText().toString())+"&img=1"+"&page="+ (currentPage+1));
                 // if no error in response
                 // getting the result from the response
                 JSONArray searchResult = obj.getJSONArray("result");
@@ -304,7 +329,7 @@ public class ImageResultSearch extends AppCompatActivity {
             final VolleyCallback callback,final  String query,final String pageNumber) {
         StringRequest stringRequest =
                 new StringRequest(
-                        Request.Method.GET,
+                        method,
                         url,
                         new Response.Listener<String>() {
                             @Override
@@ -350,6 +375,12 @@ public class ImageResultSearch extends AppCompatActivity {
                                 error.printStackTrace();
                             }
                         }) {
+                    @Override
+                    protected Map<String, String> getParams() throws AuthFailureError {
+                        Map<String, String> params = new HashMap<>();
+                        params.put("suggestion", query);
+                        return params;
+                    }
                 };
         VolleySingleton.getInstance(this).addToRequestQueue(stringRequest);
     }
@@ -364,9 +395,38 @@ public class ImageResultSearch extends AppCompatActivity {
     // Method to encode a string value using `UTF-8` encoding scheme
     private static String encodeValue(String value) {
         try {
-            return URLEncoder.encode(value, StandardCharsets.UTF_8.toString());
+            return URLEncoder.encode(value, "UTF-8");
         } catch (UnsupportedEncodingException ex) {
             throw new RuntimeException(ex.getCause());
         }
+    }
+    public void loadSuggestions(String suggestions[]){
+        getResponse(
+                Request.Method.GET,
+                ULRConnection.url+"/search/getSuggestions?",
+                null,
+                new VolleyCallback() {
+                    @Override
+                    public void onSuccessResponse(String response) throws JSONException {
+                        JSONObject obj= new JSONObject(response);;
+                        try {
+                            if(obj.getJSONArray("result").length()!=0){
+                                ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+                                // converting response to json object
+                                // if no error in response
+                                // getting the result from the response
+                                JSONArray searchResult = obj.getJSONArray("result");
+                                for(int i=0;i<searchResult.length();i++) {
+                                    suggestions[i] = searchResult.getString(i);
+                                }
+                            }else
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
+                        } catch (JSONException e) {
+                            if(obj.isNull("result"))
+                                Toast.makeText(getApplicationContext(),"No Suggestion Found",Toast.LENGTH_LONG).show();
+                            e.printStackTrace();
+                        }
+                    }
+                },editText.getText().toString(),"1");
     }
 }
