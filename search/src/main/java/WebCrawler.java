@@ -22,6 +22,7 @@ public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
         // seedPages.add("https://codeforces.com/");
+        seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
         seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("https://www.imdb.com/");
         seedPages.add("https://www.spotify.com/eg-en/");
@@ -290,7 +291,7 @@ class Crawler {
                 {
                     int start = line.indexOf(":") + 1;
                     int end   = line.length();
-                    userAgent = line.substring(start, end).trim();
+                    userAgent = line.substring(start, end).trim().toLowerCase();
                 }
                 else if (line.startsWith("Disallow:")) {
                     if (userAgent != null) {
@@ -307,12 +308,16 @@ class Crawler {
             for (RobotRule robotRule : robotRules)
             {
                 if (robotRule.rule.length() == 0) continue;         // allows all
-                if (robotRule.rule.equals("/")) return false;       // disallows all
-                String path = url.getPath();
-                if(path.length() >= robotRule.rule.length())
-                {
-                    String ruleCompare = path.substring(0, robotRule.rule.length());
-                    if (ruleCompare.equals(robotRule.rule)) return false;
+                // disallow when user agent is googlebot or *
+                if (robotRule.userAgent.equals("googlebot") || robotRule.userAgent.equals("*")) {
+                    if (robotRule.rule.equals("/"))
+                        return false; // disallows all
+                    String path = url.getPath();
+                    if (path.length() >= robotRule.rule.length()) {
+                        String ruleCompare = path.substring(0, robotRule.rule.length());
+                        if (ruleCompare.equals(robotRule.rule))
+                            return false;
+                    }
                 }
             }
         }
