@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 
 public class PerformanceModule {
-
+    public static boolean isDone = false;
     public static void main(String[] args) throws InterruptedException
     {
         String req = "http://localhost:8080/search/query?query=movie&page=1";
@@ -25,6 +25,11 @@ public class PerformanceModule {
                 threads.get(i).join();
             long endTime = System.currentTimeMillis();
             System.out.println("Processing " + threads_num + " requests took " + (endTime-startTime) + " ms.");
+            if(isDone)
+            {
+                System.out.println("Timed out when users num = " + threads_num);
+                break;
+            }
         }
     }
 
@@ -46,6 +51,7 @@ public class PerformanceModule {
             }catch(Exception e)
             {
                 System.out.println("Exception occured with number of users:" + user_num);
+                isDone = true;
                 return;
             }
             long endTime = System.currentTimeMillis();
@@ -69,7 +75,5 @@ public class PerformanceModule {
             sb.append(line + "\n");
         }
         br.close();
-        String jsonString = sb.toString();
-        System.out.println("JSON response: " + jsonString);
     }
 }
