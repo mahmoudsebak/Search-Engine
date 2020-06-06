@@ -99,8 +99,8 @@ class Crawler {
     private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
-    private static final int MAX_PAGES_TO_BE_CRAWLED = 5000;
-    private static final int MAX_PAGES_TO_BE_RECRAWLED = 10;
+    private static final int PAGES_TO_BE_CRAWLED = 5000;
+    private static final int PAGES_TO_BE_RECRAWLED = 10;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
         this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
@@ -166,8 +166,8 @@ class Crawler {
      * @return 0 if the url is crawled before, 1 if the max number of urls are added in database and 2 if it is valid to visit the url
      */
     public synchronized int visitURL(String url) {
-        if (!this.isRecraler && this.pagesVisited.size() + this.pagesToVisit.size() >= MAX_PAGES_TO_BE_CRAWLED) return 1;
-        if (this.isRecraler && this.pagesVisited.size() == MAX_PAGES_TO_BE_RECRAWLED) return 1;  
+        if (!this.isRecraler && this.pagesVisited.size() + this.pagesToVisit.size() >= PAGES_TO_BE_CRAWLED) return 1;
+        if (this.isRecraler && this.pagesVisited.size() == PAGES_TO_BE_RECRAWLED) return 1;  
         if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         try {
             url = this.normalizeUrl(url);
@@ -207,11 +207,25 @@ class Crawler {
             } catch (URISyntaxException e) {
                 continue;
             }
-            this.pagesToVisit.offer(page);
-            this.adapter.addURL(page);
-            this.adapter.addLink(url, page);
+            this.addToDatabase(page, url);
         }
         
+    }
+
+    /**
+     * This function is used to add found links in the database and their source page
+	 *
+	 * @param page: the page to be added 
+	 * @param url: the source url of the page to be added 
+     */
+    public synchronized void addToDatabase(String page, String url)
+    {
+        if(!this.pagesToVisit.contains(page) && !this.pagesVisited.containsKey(page))
+        {
+            this.pagesToVisit.offer(page);
+            this.adapter.addURL(page);
+        }
+        this.adapter.addLink(url, page);
     }
 
     /**
