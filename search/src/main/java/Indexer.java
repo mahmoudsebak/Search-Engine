@@ -42,6 +42,8 @@ public class Indexer {
             }
             adapter.setIndexedURL(url, true);
         }
+        adapter.removeDuplicateImages();
+        adapter.removeDuplicateWords();
         System.out.println("Finished Indexing all links");
         adapter.close();
     }

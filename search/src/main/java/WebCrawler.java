@@ -47,9 +47,11 @@ public class WebCrawler {
         for(int i = 0; i < ThreadNo; i++) t[i].start();
         for(int i = 0; i < ThreadNo; i++) t[i].join();
         long time = System.currentTimeMillis() - start;
+        adapter.removeDuplicateLinks();
         System.out.println("\nTime taken = " + time + " ms");
         System.out.println("Crawled = " + crawler.getPagesVisitedLength() + " web page(s)");
         System.out.println("ToBeCrawled = " + crawler.getPagesToVisitLength() + " web page(s)");
+        adapter.close();
 
     }
 }
@@ -69,10 +71,12 @@ class Recrawler {
         long start = System.currentTimeMillis();
         for(int i = 0; i < ThreadNo; i++) t[i].start();
         for(int i = 0; i < ThreadNo; i++) t[i].join();
+        adapter.removeDuplicateLinks();
         long time = System.currentTimeMillis() - start;
         System.out.println("\nTime taken = " + time + " ms");
         System.out.println("Crawled = " + crawler.getPagesVisitedLength() + " web page(s)");
         System.out.println("ToBeCrawled = " + crawler.getPagesToVisitLength() + " web page(s)");
+        adapter.close();
     }
 }
 
