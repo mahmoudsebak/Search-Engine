@@ -58,7 +58,7 @@ public class IndexerDbAdapter {
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
             "CREATE TABLE if not exists %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256),"
-                    + " %s TEXT, %s varchar(512), %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0,"
+                    + " %s MEDIUMTEXT, %s varchar(512), %s DATETIME, %s BOOLEAN DEFAULT false, %s double DEFAULT 0,"
                     + " %s double DEFAULT 0, %s double DEFAULT 0)",
             TABLE_URLS_NAME, COL_ID, COL_URL, COL_CONTENT, COL_TITLE, COL_CRAWLED_AT, COL_INDEXED, COL_PAGE_RANK,
             COL_DATE_SCORE, COL_GEO_SCORE);
@@ -68,7 +68,7 @@ public class IndexerDbAdapter {
 
     private static final String TABLE2_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(75), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                    + " %s varchar(100), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
@@ -540,7 +540,7 @@ public class IndexerDbAdapter {
         String sql = String.format("SELECT %s, %s, %s FROM %s"
                 + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                 + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
-                + ") and %s < 0.7 GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
+                + ") and %s < 1.7 GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
                 COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
                 COL_WORD, COL_WORD, TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_URL, COL_SCORE,
                 COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
@@ -585,7 +585,7 @@ public class IndexerDbAdapter {
         String sql = String.format("SELECT %s, %s, %s FROM %s"
                 + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                 + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
-                + ") and %s < 0.7 and %s like ? GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
+                + ") and %s < 1.7 and %s like ? GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
                 COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
                 COL_WORD, COL_WORD, TABLE_URLS_NAME, COL_URL, COL_WORD, COL_SCORE, COL_CONTENT, COL_URL, COL_SCORE,
                 COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
@@ -636,7 +636,7 @@ public class IndexerDbAdapter {
         String sql = String.format("SELECT %s, %s FROM %s"
                         + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                         + " as temp USING (%s) JOIN %s USING (%s) JOIN %s USING (%s) WHERE %s in ("
-                        + makePlaceholders(words.length) + ") and %s < 0.7 and %s like ? "
+                        + makePlaceholders(words.length) + ") and %s < 1.7 and %s like ? "
                         + "GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
                 COL_URL, COL_IMAGE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD,
                 COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_IMAGES_NAME, COL_URL, COL_WORD, COL_SCORE, COL_CONTENT,
@@ -684,7 +684,7 @@ public class IndexerDbAdapter {
         String sql = String.format("SELECT %s, %s FROM %s"
                         + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                         + " as temp USING (%s) JOIN %s USING (%s) JOIN %s USING (%s) WHERE %s in ("
-                        + makePlaceholders(words.length) + ") and %s < 0.7 "
+                        + makePlaceholders(words.length) + ") and %s < 1.7 "
                         + "GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
                 COL_URL, COL_IMAGE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD,
                 COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_IMAGES_NAME, COL_URL, COL_WORD, COL_SCORE,
