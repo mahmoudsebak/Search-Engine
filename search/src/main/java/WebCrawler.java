@@ -226,7 +226,8 @@ class Crawler {
         }
         if(url.indexOf('?') != -1)
             url = url.substring(0, url.indexOf('?'));
-
+        if (url.indexOf('#') != -1)
+            url = url.substring(0, url.indexOf('#'));
         URI uri = new URI(url);
         if (!uri.isAbsolute()) {
             throw new URISyntaxException(url, "Not an absolute URL");

@@ -68,7 +68,7 @@ public class IndexerDbAdapter {
 
     private static final String TABLE2_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(50), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                    + " %s varchar(75), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
