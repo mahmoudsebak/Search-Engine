@@ -159,8 +159,8 @@ public class ImageResultSearch extends AppCompatActivity {
             }
         });
         editText=findViewById(R.id.editText2);
-        loadSuggestions();
         editText.setText(getIntent().getStringExtra("toImage"));
+        loadSuggestions();
         customAdapterForImageSearch =new CustomAdapterForImageSearch(this, sitesArrayList);
         imageGridView.setAdapter(customAdapterForImageSearch);
         imageGridView.setOnScrollListener(new AbsListView.OnScrollListener() {

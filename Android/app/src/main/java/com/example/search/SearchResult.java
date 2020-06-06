@@ -104,7 +104,6 @@ public class SearchResult extends AppCompatActivity {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                loadSuggestions();
                 loadingMore=false;
                 endOfResult=false;
                 currentPage=1;
@@ -172,6 +171,7 @@ public class SearchResult extends AppCompatActivity {
         });
         editText=findViewById(R.id.editText1);
         editText.setText(getIntent().getStringExtra("TypedWord"));
+        loadSuggestions();
 
         customAdapterForWebsiteList=new CustomAdapterForWebsiteList(this, sitesArrayList);
         webSitesListView.setAdapter(customAdapterForWebsiteList);

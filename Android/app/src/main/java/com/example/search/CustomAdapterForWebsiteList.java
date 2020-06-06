@@ -62,7 +62,7 @@ public class CustomAdapterForWebsiteList extends ArrayAdapter {
                     public void run() {
                         getResponse(
                                 Request.Method.GET,
-                                ULRConnection.url+"/search/user_action?"+currentWebsite.getUrl(),
+                                ULRConnection.url+"/search/userAction?url="+currentWebsite.getUrl(),
                                 null,
                                 new VolleyCallback() {
                                     @Override

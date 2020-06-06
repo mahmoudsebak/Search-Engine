@@ -61,7 +61,7 @@ public class CustomAdapterForImageSearch extends ArrayAdapter {
                     public void run() {
                         getResponse(
                                 Request.Method.GET,
-                                ULRConnection.url+"/search/user_action?"+currentWebsite.getUrl(),
+                                ULRConnection.url+"/search/userAction?"+currentWebsite.getUrl(),
                                 null,
                                 new VolleyCallback() {
                                     @Override
