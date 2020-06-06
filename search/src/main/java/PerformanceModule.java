@@ -17,7 +17,7 @@ public class PerformanceModule {
             ArrayList<Thread> threads = new ArrayList<>();
             for(int i = 1;i<=threads_num;i++)
                 threads.add(new Thread(x.new user(req, threads_num)));
-
+            isDone = false;
             long startTime = System.currentTimeMillis();
             for(int i=0;i<threads.size();i++)
                 threads.get(i).start();
@@ -27,7 +27,7 @@ public class PerformanceModule {
             System.out.println("Processing " + threads_num + " requests took " + (endTime-startTime) + " ms.");
             if(isDone)
             {
-                System.out.println("Timed out when users num = " + threads_num);
+                System.out.println("Some users timed out when users num = " + threads_num);
                 break;
             }
         }
