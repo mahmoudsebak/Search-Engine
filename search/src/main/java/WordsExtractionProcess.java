@@ -104,6 +104,11 @@ public class WordsExtractionProcess {
         return  listOfStemmedWords;
     }
 
+    public static String stem (String s) {
+        Stemmer stemmer = new Stemmer();
+        return stemmer.Stemming(s);
+    }
+    
     static class Stemmer {
     
         private String word;

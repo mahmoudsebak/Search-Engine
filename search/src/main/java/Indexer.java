@@ -83,15 +83,13 @@ public class Indexer {
         String title = doc.title();
         ArrayList<String> words = WordsExtractionProcess.SplitStrings(title);
         totalNumberOfWords += words.size();
-        listOfWords.add(WordsExtractionProcess.ApplyingStemming(
-            WordsExtractionProcess.RemovingStoppingWords(words)));
+        listOfWords.add(WordsExtractionProcess.RemovingStoppingWords(words));
 
         for (String tag : tags) {
             String elem = doc.body().getElementsByTag(tag).text();
             words = WordsExtractionProcess.SplitStrings(elem);
             totalNumberOfWords += words.size();
-            listOfWords.add(WordsExtractionProcess.ApplyingStemming(
-                WordsExtractionProcess.RemovingStoppingWords(words)));
+            listOfWords.add(WordsExtractionProcess.RemovingStoppingWords(words));
         }
 
     }

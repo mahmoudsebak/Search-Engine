@@ -21,8 +21,8 @@ public class QueryProcessor {
 
         if (query.startsWith("\"") && query.endsWith("\"")) {
             query = query.substring(1, query.length() - 1);
-            ArrayList<String> words = WordsExtractionProcess.ApplyingStemming(
-                    WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
+            ArrayList<String> words = WordsExtractionProcess
+                    .RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query));
             String[] queryWords = words.toArray(new String[0]);
             if (isImage)
                 result = adapter.queryImage(query, queryWords, PAGES_LIMIT, page);
@@ -41,8 +41,8 @@ public class QueryProcessor {
                 }
             }
         } else {
-            ArrayList<String> words = WordsExtractionProcess.ApplyingStemming(
-                    WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query)));
+            ArrayList<String> words = WordsExtractionProcess
+                    .RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query));
             String[] queryWords = words.toArray(new String[0]);
             if (isImage)
                 result = adapter.queryImage(queryWords, PAGES_LIMIT, page);
