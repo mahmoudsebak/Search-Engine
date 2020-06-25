@@ -79,7 +79,7 @@ public class Indexer {
         listOfWords = new ArrayList<ArrayList<String>>();
 
         totalNumberOfWords = 0;
-        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "a"};
+        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "a", "meta"};
         String title = doc.title();
         ArrayList<String> words = WordsExtractionProcess.SplitStrings(title);
         totalNumberOfWords += words.size();
@@ -87,13 +87,31 @@ public class Indexer {
             WordsExtractionProcess.RemovingStoppingWords(words)));
 
         for (String tag : tags) {
-            String elem = doc.body().getElementsByTag(tag).text();
-            words = WordsExtractionProcess.SplitStrings(elem);
-            totalNumberOfWords += words.size();
-            listOfWords.add(WordsExtractionProcess.ApplyingStemming(
-                WordsExtractionProcess.RemovingStoppingWords(words)));
-        }
+            String elem="";
+            if(!tag.equals("meta"))
+                elem = doc.body().getElementsByTag(tag).text();
+            else{
+                Elements metaTags = doc.getElementsByTag("meta");
 
+                for (Element metaTag : metaTags) {
+                    String content = metaTag.attr("content");
+                    String name = metaTag.attr("name");
+
+                    if("description".equals(name)) {
+                        elem+=content;
+                    }
+                    if("keywords".equals(name)) {
+                        elem+=content;
+                    }
+                }
+
+            }
+            words = WordsExtractionProcess.SplitStrings(elem);
+                totalNumberOfWords += words.size();
+                listOfWords.add(WordsExtractionProcess.ApplyingStemming(
+                    WordsExtractionProcess.RemovingStoppingWords(words)));
+
+        }
     }
 
     /**

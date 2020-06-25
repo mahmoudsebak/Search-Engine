@@ -44,6 +44,7 @@ public class WordsExtractionProcess {
         word=word.replace("-",""); // remove dash
         word=word.replace("_",""); // remove underscore
         word=word.replace("/",""); // remove slash
+        word=word.replace("|",""); // remove or
 
         //Reject other language other than english
         for(int i=0;i<word.length();i++){
