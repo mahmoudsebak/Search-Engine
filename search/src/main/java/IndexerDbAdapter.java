@@ -542,8 +542,9 @@ public class IndexerDbAdapter {
                 ps.setString(1, word);
                 ps.setString(2, WordsExtractionProcess.stem(word));
                 ps.setString(3, url);
+                ps.addBatch();
             }
-            ps.executeUpdate();
+            ps.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
         }
