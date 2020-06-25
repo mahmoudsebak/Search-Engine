@@ -7,8 +7,9 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Properties;
 import java.util.Map.Entry;
+import java.util.Properties;
+
 
 public class IndexerDbAdapter {
 
@@ -35,6 +36,7 @@ public class IndexerDbAdapter {
     public static final String COL_DST_URL = "dst_url";
 
     public static final String COL_IMAGE = "image";
+    public static final String COL_ALT = "alt";
 
     public static final String COL_QUERY = "query";
 
@@ -56,6 +58,9 @@ public class IndexerDbAdapter {
     private static final String TABLE_IMAGES_INDEX_NAME = "tb4_images_index";
     private static final String TABLE_QUERIES_NAME = "tb5_queries";
     private static final String TABLE_USER_URLS_NAME = "tb6_user_urls";
+    private static final String TABLE_IMAGE_WORDS_NAME = "tb7_image_words";
+    private static final String TABLE_IMAGE_WORDS_INDEX_NAME = "tb7_image_words_url_index";
+    private static final String TABLE_IMAGE_WORDS_INDEX2_NAME = "tb7_image_stem_url_index";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -94,8 +99,8 @@ public class IndexerDbAdapter {
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
                 "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                        + " %s varchar(256), %s varchar(512), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-                TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_URL, TABLE_URLS_NAME, COL_URL);
+                        + " %s varchar(256), %s varchar(512), %s varchar(512),  FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_ALT, COL_URL, TABLE_URLS_NAME, COL_URL);
     
     private static final String TABLE4_INDEX_CREATE = String.format(
                 "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
@@ -109,6 +114,18 @@ public class IndexerDbAdapter {
             "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s varchar(256) UNIQUE, %s INTEGER)",
             TABLE_USER_URLS_NAME, COL_ID, COL_URL, COL_FREQ);
 
+    private static final String TABLE7_CREATE = String.format(
+            "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                    + " %s varchar(100), %s varchar(100), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+            TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_URL, COL_URL, TABLE_URLS_NAME, COL_URL);
+
+    private static final String TABLE7_INDEX_CREATE = String.format(
+            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX_NAME, TABLE_IMAGE_WORDS_NAME, COL_WORD,
+            COL_URL);
+
+    private static final String TABLE7_INDEX2_CREATE = String.format(
+            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX2_NAME, TABLE_IMAGE_WORDS_NAME, COL_STEM,
+            COL_URL);
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
     public IndexerDbAdapter() {
@@ -132,6 +149,9 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE4_INDEX_CREATE);
             stmt.addBatch(TABLE5_QUERIES_CREATE);
             stmt.addBatch(TABLE6_USER_URLS_CREATE);
+            stmt.addBatch(TABLE7_CREATE);
+            stmt.addBatch(TABLE7_INDEX_CREATE);
+            stmt.addBatch(TABLE7_INDEX2_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -488,17 +508,42 @@ public class IndexerDbAdapter {
     /**
      * add all images of a url
      * @param url the url to add its imags
-     * @param images the image to be added
+     * @param images list of images to be added
      */
-    public void addImages(String url, String[] images) {
-        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
+    public void addImages(String url, ArrayList<ImageSearch> images) {
+        
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (String image : images) {
+            for (ImageSearch image : images) {
                 ps.setString(1, url);
-                ps.setString(2, image);
+                ps.setString(2, image.getUrl());
+                ps.setString(3, image.getAlt());
                 ps.addBatch();
             }
             ps.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * add all words of a certian image
+     * 
+     * @param words       array of words
+     * @param url         the image url to add its words
+     */
+    public void addImageWords(String url, ArrayList<String> words){
+        
+        String sql = String.format(
+                "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)",
+                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (String word : words) {
+                ps.setString(1, word);
+                ps.setString(2, WordsExtractionProcess.stem(word));
+                ps.setString(3, url);
+            }
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }

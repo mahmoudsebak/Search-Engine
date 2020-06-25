@@ -33,7 +33,10 @@ public class Indexer {
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
                 adapter.addWords(wordScore, url);
-                adapter.addImages(url, indexer.getImages().toArray(new String[0]));
+                adapter.addImages(url, indexer.getImages());
+                for(ImageSearch item :indexer.getImages())
+                    adapter.addImageWords(url, item.getWords());
+                
                 long endTime = System.currentTimeMillis();
                 System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
                 
@@ -137,42 +140,43 @@ public class Indexer {
         for (Element element : imgs) {
             String url = element.attr("abs:src");
             String alt = element.attr("alt");
-            imgURLs.add(new ImageSearch(url, alt, WordsExtractionProcess.ApplyingStemming(WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(alt)))));
+            imgURLs.add(new ImageSearch(url, alt, WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(alt))));
         }
         return imgURLs;
     }
-    public class ImageSearch {
-        String url,alt;
-        ArrayList<String>words;
     
-        public ImageSearch(String url, String alt, ArrayList<String> words) {
-            this.url = url;
-            this.alt = alt;
-            this.words = words;
-        }
-        
-        public String getUrl() {
-            return url;
-        }
+}
+class ImageSearch {
+    String url,alt;
+    ArrayList<String>words;
+
+    public ImageSearch(String url, String alt, ArrayList<String> words) {
+        this.url = url;
+        this.alt = alt;
+        this.words = words;
+    }
     
-        public void setUrl(String url) {
-            this.url = url;
-        }
-    
-        public String getAlt() {
-            return alt;
-        }
-    
-        public void setAlt(String alt) {
-            this.alt = alt;
-        }
-    
-        public ArrayList<String> getWords() {
-            return words;
-        }
-    
-        public void setWords(ArrayList<String> words) {
-            this.words = words;
-        }
+    public String getUrl() {
+        return url;
+    }
+
+    public void setUrl(String url) {
+        this.url = url;
+    }
+
+    public String getAlt() {
+        return alt;
+    }
+
+    public void setAlt(String alt) {
+        this.alt = alt;
+    }
+
+    public ArrayList<String> getWords() {
+        return words;
+    }
+
+    public void setWords(ArrayList<String> words) {
+        this.words = words;
     }
 }
