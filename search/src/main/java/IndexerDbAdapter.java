@@ -99,7 +99,7 @@ public class IndexerDbAdapter {
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
                 "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                        + " %s varchar(256), %s varchar(512), %s varchar(512),  FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                        + " %s varchar(256), %s varchar(512), %s TEXT,  FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
                 TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_ALT, COL_URL, TABLE_URLS_NAME, COL_URL);
     
     private static final String TABLE4_INDEX_CREATE = String.format(
@@ -512,7 +512,7 @@ public class IndexerDbAdapter {
      */
     public void addImages(String url, ArrayList<ImageSearch> images) {
         
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE,COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (ImageSearch image : images) {
                 ps.setString(1, url);

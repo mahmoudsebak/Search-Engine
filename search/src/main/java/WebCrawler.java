@@ -21,7 +21,6 @@ import org.jsoup.select.Elements;
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         Set<String> seedPages  = new HashSet<String>();
-        // seedPages.add("https://codeforces.com/");
         seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
         seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("https://www.imdb.com/");

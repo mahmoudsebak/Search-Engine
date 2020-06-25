@@ -35,7 +35,7 @@ public class Indexer {
                 adapter.addWords(wordScore, url);
                 adapter.addImages(url, indexer.getImages());
                 for(ImageSearch item :indexer.getImages())
-                    adapter.addImageWords(url, item.getWords());
+                    adapter.addImageWords(item.getUrl(), item.getWords());
                 
                 long endTime = System.currentTimeMillis();
                 System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
