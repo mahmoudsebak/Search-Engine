@@ -54,7 +54,7 @@ public class Ranker {
         tagScores.add(restOfTags_score);
         tagScores.add(restOfTags_score);
         tagScores.add(restOfTags_score);
-        tagScores.add(restOfTags_score);
+        tagScores.add(title_score);
         extensionsDistance = new HashMap<String,Double>();
         readExtensions();
     }
