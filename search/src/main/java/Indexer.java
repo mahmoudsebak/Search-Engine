@@ -131,13 +131,48 @@ public class Indexer {
         }
         return "1 jan 1990";
     }
-    public ArrayList<String> getImages(){
-        ArrayList<String> imgURLs=new ArrayList<String>();
+    public ArrayList<ImageSearch> getImages(){
+        ArrayList<ImageSearch> imgURLs=new ArrayList<ImageSearch>();
         Elements imgs= (Elements) doc.body().getElementsByTag("img");
         for (Element element : imgs) {
             String url = element.attr("abs:src");
-            imgURLs.add(url);
+            String alt = element.attr("alt");
+            imgURLs.add(new ImageSearch(url, alt, WordsExtractionProcess.ApplyingStemming(WordsExtractionProcess.RemovingStoppingWords(WordsExtractionProcess.SplitStrings(alt)))));
         }
         return imgURLs;
+    }
+    public class ImageSearch {
+        String url,alt;
+        ArrayList<String>words;
+    
+        public ImageSearch(String url, String alt, ArrayList<String> words) {
+            this.url = url;
+            this.alt = alt;
+            this.words = words;
+        }
+        
+        public String getUrl() {
+            return url;
+        }
+    
+        public void setUrl(String url) {
+            this.url = url;
+        }
+    
+        public String getAlt() {
+            return alt;
+        }
+    
+        public void setAlt(String alt) {
+            this.alt = alt;
+        }
+    
+        public ArrayList<String> getWords() {
+            return words;
+        }
+    
+        public void setWords(ArrayList<String> words) {
+            this.words = words;
+        }
     }
 }
