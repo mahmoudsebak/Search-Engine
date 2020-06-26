@@ -54,7 +54,10 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 
 import static java.security.AccessController.getContext;
@@ -87,17 +90,16 @@ public class MainActivity extends AppCompatActivity {
         // Spinner element
         Spinner spinner = (Spinner) findViewById(R.id.region_spinner);
 
-        // Spinner Drop down elements
-        List<String> categories = new ArrayList<String>();
-        categories.add("Eg");
-        categories.add("US");
-        categories.add("Uk");
-        categories.add("Ru");
-        categories.add("Fr");
-        categories.add("Ar");
+        //Add countries as Spinner elements
+        SortedSet<String> countries = new TreeSet<>();
+        for (Locale locale : Locale.getAvailableLocales()) {
+            if (!TextUtils.isEmpty(locale.getDisplayCountry())) {
+                countries.add(locale.getDisplayCountry());
+            }
+        }
 
         // Creating adapter for spinner
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, categories);
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, countries.toArray(new String[0]));
 
         // Drop down layout style - list view with radio button
         dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
