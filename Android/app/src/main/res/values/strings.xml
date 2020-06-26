@@ -14,4 +14,6 @@
     <string name="text">Text</string>
     <string name="image1">Image</string>
     <string name="image">Image</string>
+    <string name="region_selection_text">choose your region</string>
+    <string name="button_description">Image button to view charts</string>
 </resources>

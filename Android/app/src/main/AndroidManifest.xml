@@ -12,7 +12,8 @@
         android:theme="@style/AppTheme"
         android:usesCleartextTraffic="true"
         tools:targetApi="n">
-        <activity android:name=".ImageResultSearch"></activity>
+        <activity android:name=".ShowTrendsCharts"></activity>
+        <activity android:name=".ImageResultSearch" />
         <activity android:name=".SearchResult" />
         <activity android:name=".MainActivity">
             <intent-filter>

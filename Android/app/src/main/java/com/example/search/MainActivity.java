@@ -53,6 +53,7 @@ import java.net.URLConnection;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
@@ -83,6 +84,86 @@ public class MainActivity extends AppCompatActivity {
         editText=( AutoCompleteTextView)findViewById(R.id.editText);
         loadSuggestions();
 
+        // Spinner element
+        Spinner spinner = (Spinner) findViewById(R.id.region_spinner);
+
+        // Spinner Drop down elements
+        List<String> categories = new ArrayList<String>();
+        categories.add("Eg");
+        categories.add("US");
+        categories.add("Uk");
+        categories.add("Ru");
+        categories.add("Fr");
+        categories.add("Ar");
+
+        // Creating adapter for spinner
+        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_spinner_item, categories);
+
+        // Drop down layout style - list view with radio button
+        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_item);
+
+        // attaching data adapter to spinner
+        spinner.setAdapter(dataAdapter);
+
+        // Spinner click listener
+        spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+
+
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+
+                // sometimes you need nothing here
+            }
+        });
+
+        ImageButton showTrend=findViewById(R.id.view_charts);
+        showTrend.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                /*getResponse(
+                        Request.Method.GET,
+                        ULRConnection.url+"/search/query?",
+                        null,
+                        new VolleyCallback() {
+                            @Override
+                            public void onSuccessResponse(String response) throws JSONException {
+                                JSONObject obj= new JSONObject(response);;
+                                try {
+                                    if(obj.getJSONArray("result").length()!=0){
+                                        ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
+                                        // converting response to json object
+                                        // if no error in response
+                                        // getting the result from the response
+                                        JSONArray searchResult = obj.getJSONArray("result");
+                                        for(int i=0;i<searchResult.length();i++) {
+                                            WebSites currentWebsite=new WebSites();
+                                            JSONObject current = searchResult.getJSONObject(i);
+                                            currentWebsite.setUrl(current.getString("url"));
+                                            currentWebsite.setDescription(current.getString("content"));
+                                            currentWebsite.setHeader(current.getString("title"));
+                                            webSitesArrayList.add(currentWebsite);
+                                        }
+                                        Intent i=new Intent(MainActivity.this,SearchResult.class);
+                                        i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
+                                        i.putExtra("TypedWord",editText.getText().toString());
+                                        startActivity(i);
+                                    }else
+                                        Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                } catch (JSONException e) {
+                                    if(obj.isNull("result"))
+                                        Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
+                                    e.printStackTrace();
+                                }
+                            }
+                        },editText.getText().toString(),"1");*/
+                Intent i=new Intent(getApplicationContext(),ShowTrendsCharts.class);
+                startActivity(i);
+            }
+        });
 
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener() {
