@@ -703,9 +703,9 @@ public class IndexerDbAdapter {
      * 
      */
     public ArrayList<HashMap<String, String>> queryImage(String phrase, int limit, int page) {
-        String sql = String.format("SELECT %s, %s FROM %s JOIN %s USING (%s)"
+        String sql = String.format("SELECT %s, %s, %s FROM %s JOIN %s USING (%s)"
                 + " where %s like ? ORDER BY ( %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, TABLE_IMAGES_NAME, TABLE_URLS_NAME, COL_URL, COL_ALT, COL_PAGE_RANK, COL_DATE_SCORE,
+                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_URLS_NAME, COL_URL, COL_ALT, COL_PAGE_RANK, COL_DATE_SCORE,
                 COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
@@ -723,6 +723,7 @@ public class IndexerDbAdapter {
                     HashMap<String, String> elem = new HashMap<String, String>();
                     elem.put("url", rs.getString(1));
                     elem.put("image", rs.getString(2));
+                    elem.put("alt", rs.getString(3));
                     ret.add(elem);
                 }
                 
@@ -746,12 +747,12 @@ public class IndexerDbAdapter {
      */
     public ArrayList<HashMap<String, String>> queryImage(String[] words, int limit, int page) {
         String sql = String.format(
-                "SELECT %s, %s FROM %s JOIN %s USING(%s) JOIN %s USING (%s)"
+                "SELECT %s, %s, %s FROM %s JOIN %s USING(%s) JOIN %s USING (%s)"
                         + " LEFT JOIN (SELECT %s, COUNT(*) AS matching_words FROM %s WHERE %s in ("
                         + makePlaceholders(words.length) + ")" + "GROUP BY %s) as temp USING(%s) WHERE %s in("
                         + makePlaceholders(words.length) + ") GROUP BY %s"
                         + " ORDER BY (COALESCE(matching_words, 0) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, TABLE_IMAGES_NAME, TABLE_IMAGE_WORDS_NAME, COL_IMAGE, TABLE_URLS_NAME, COL_URL,
+                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_IMAGE_WORDS_NAME, COL_IMAGE, TABLE_URLS_NAME, COL_URL,
                 COL_IMAGE, TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_IMAGE, COL_IMAGE, COL_STEM, COL_IMAGE, COL_PAGE_RANK,
                 COL_DATE_SCORE, COL_GEO_SCORE);
 
@@ -775,6 +776,7 @@ public class IndexerDbAdapter {
                     HashMap<String, String> elem = new HashMap<String, String>();
                     elem.put("url", rs.getString(1));
                     elem.put("image", rs.getString(2));
+                    elem.put("alt", rs.getString(3));
                     ret.add(elem);
                 }
                 
