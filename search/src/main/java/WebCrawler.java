@@ -102,7 +102,7 @@ class Crawler {
     private ConcurrentHashMap <String, Boolean> pagesVisited;
     private LinkedBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
-    private static final int PAGES_TO_BE_CRAWLED = 5000;
+    private static final int PAGES_TO_BE_CRAWLED = 50000;
     private static final int PAGES_TO_BE_RECRAWLED = 10;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
