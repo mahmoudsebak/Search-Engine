@@ -63,6 +63,8 @@ public class IndexerDbTest {
 
         System.out.println(dbAdapter.removeDuplicateLinks());
         System.out.println(dbAdapter.removeDuplicateImages());
+        System.out.println(dbAdapter.removeDuplicateImageWords());
+        System.out.println(dbAdapter.removeDuplicateWords());
         dbAdapter.close();
     }
 }

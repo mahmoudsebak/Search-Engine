@@ -46,6 +46,7 @@ public class Indexer {
             adapter.setIndexedURL(url, true);
         }
         adapter.removeDuplicateImages();
+        adapter.removeDuplicateImageWords();
         adapter.removeDuplicateWords();
         System.out.println("Finished Indexing all links");
         adapter.close();
@@ -140,6 +141,8 @@ public class Indexer {
         Elements imgs = (Elements) doc.body().getElementsByTag("img");
         for (Element element : imgs) {
             String url = element.attr("abs:src");
+            if (element.hasAttr("data-src"))
+                url = element.attr("abs:data-src");
             if (!url.equals("")) {
                 String alt = element.attr("alt");
                 imgURLs.add(new Image(url, alt,

@@ -124,7 +124,7 @@ public class IndexerDbAdapter {
             TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_IMAGE, COL_IMAGE, TABLE_IMAGES_NAME, COL_IMAGE);
 
     private static final String TABLE7_INDEX_CREATE = String.format(
-            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX_NAME, TABLE_IMAGE_WORDS_NAME, COL_WORD,
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX_NAME, TABLE_IMAGE_WORDS_NAME, COL_WORD,
             COL_IMAGE);
 
     private static final String TABLE7_INDEX2_CREATE = String.format(
@@ -919,6 +919,19 @@ public class IndexerDbAdapter {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
                 TABLE_WORDS_NAME, TABLE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_URL, COL_URL);
+        try (Statement stmt = conn.createStatement()) {
+            return stmt.executeUpdate(sql);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    public int removeDuplicateImageWords() {
+        String sql = String.format(
+                "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
+                TABLE_IMAGE_WORDS_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_IMAGE,
+                COL_IMAGE);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
