@@ -4,18 +4,12 @@ import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 
-import android.app.Activity;
-import android.content.ContentUris;
 import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Parcelable;
-import android.provider.ContactsContract;
 import android.speech.RecognizerIntent;
-import android.text.Editable;
 import android.text.TextUtils;
-import android.text.TextWatcher;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -23,8 +17,6 @@ import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.AutoCompleteTextView;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Spinner;
 import android.widget.Toast;
@@ -37,36 +29,27 @@ import com.android.volley.Response;
 import com.android.volley.TimeoutError;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
+import com.github.mikephil.charting.data.BarEntry;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.ExecutionException;
-
-import static java.security.AccessController.getContext;
 
 public class MainActivity extends AppCompatActivity {
     private static final int REQUEST_CODE = 1234;
-    public static String url,title;
+    public static String region;
     AutoCompleteTextView editText;
     ImageButton voiceSearch;
+    Spinner spinner;
+    public static ArrayList<BarEntry> trends;
+    public static ArrayList<String> trendyWords;
     @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,7 +71,7 @@ public class MainActivity extends AppCompatActivity {
         loadSuggestions();
 
         // Spinner element
-        Spinner spinner = (Spinner) findViewById(R.id.region_spinner);
+        spinner = (Spinner) findViewById(R.id.region_spinner);
 
         //Add countries as Spinner elements
         SortedSet<String> countries = new TreeSet<>();
@@ -112,7 +95,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-
+                region=spinner.getSelectedItem().toString();
             }
 
             @Override
@@ -126,32 +109,25 @@ public class MainActivity extends AppCompatActivity {
         showTrend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                /*getResponse(
+                getResponse(
                         Request.Method.GET,
-                        ULRConnection.url+"/search/query?",
+                        ULRConnection.url+"/search/trends?region="+region,
                         null,
                         new VolleyCallback() {
                             @Override
                             public void onSuccessResponse(String response) throws JSONException {
+                                trendyWords=new ArrayList<>();
+                                trends=new ArrayList<>();
                                 JSONObject obj= new JSONObject(response);;
                                 try {
                                     if(obj.getJSONArray("result").length()!=0){
-                                        ArrayList<WebSites>webSitesArrayList=new ArrayList<>();
-                                        // converting response to json object
-                                        // if no error in response
-                                        // getting the result from the response
-                                        JSONArray searchResult = obj.getJSONArray("result");
-                                        for(int i=0;i<searchResult.length();i++) {
-                                            WebSites currentWebsite=new WebSites();
-                                            JSONObject current = searchResult.getJSONObject(i);
-                                            currentWebsite.setUrl(current.getString("url"));
-                                            currentWebsite.setDescription(current.getString("content"));
-                                            currentWebsite.setHeader(current.getString("title"));
-                                            webSitesArrayList.add(currentWebsite);
+                                        JSONArray trendsResult = obj.getJSONArray("result");
+                                        for(int i=0;i<trendsResult.length();i++) {
+                                            JSONObject current = trendsResult.getJSONObject(i);
+                                            trends.add(new BarEntry(i, current.getInt("count")));
+                                            trendyWords.add(current.getString("person"));
                                         }
-                                        Intent i=new Intent(MainActivity.this,SearchResult.class);
-                                        i.putParcelableArrayListExtra("searchResult", (ArrayList<? extends Parcelable>) webSitesArrayList);
-                                        i.putExtra("TypedWord",editText.getText().toString());
+                                        Intent i=new Intent(getApplicationContext(),ShowTrendsCharts.class);
                                         startActivity(i);
                                     }else
                                         Toast.makeText(getApplicationContext(),"No result found",Toast.LENGTH_LONG).show();
@@ -161,9 +137,7 @@ public class MainActivity extends AppCompatActivity {
                                     e.printStackTrace();
                                 }
                             }
-                        },editText.getText().toString(),"1");*/
-                Intent i=new Intent(getApplicationContext(),ShowTrendsCharts.class);
-                startActivity(i);
+                        },editText.getText().toString(),"1");
             }
         });
 
@@ -321,6 +295,7 @@ public class MainActivity extends AppCompatActivity {
                     protected Map<String, String> getParams() throws AuthFailureError {
                         Map<String, String> params = new HashMap<>();
                         params.put("suggestion", query);
+                        params.put("region",region);
                         return params;
                     }
                 };

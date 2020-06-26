@@ -106,13 +106,15 @@ import java.util.Random;
 import okhttp3.internal.Util;
 
 public class ShowTrendsCharts extends AppCompatActivity {
-    private static final int MAX_X_VALUE = 7;
-    private static final int MAX_Y_VALUE = 45;
-    private static final int MIN_Y_VALUE = 5;
-    private static final String SET_LABEL = "Average Temperature";
-    private static final String[] DAYS = { "SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT" };
+    private static final int MAX_X_VALUE = 10;
+    private static final int MAX_Y_VALUE = 50;
+    private static final int MIN_Y_VALUE = 0;
+    private static final String SET_LABEL = "Most trends words in"+MainActivity.region;
+    public static  String[] DAYS ;
 
     HorizontalBarChart barChart;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -127,6 +129,7 @@ public class ShowTrendsCharts extends AppCompatActivity {
         barChart.getDescription().setEnabled(false);
         barChart.setDrawValueAboveBar(false);
         XAxis xAxis = barChart.getXAxis();
+        DAYS=MainActivity.trendyWords.toArray(new String[0]);
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
             public String getFormattedValue(float value) {
@@ -136,15 +139,14 @@ public class ShowTrendsCharts extends AppCompatActivity {
     }
 
     private BarData createChartData() {
-        ArrayList<BarEntry> values = new ArrayList<>();
-        for (int i = 0; i < MAX_X_VALUE; i++) {
+        ArrayList<BarEntry> values = MainActivity.trends;
+        /*for (int i = 0; i < MAX_X_VALUE; i++) {
             float x = i;
             Random rand=new Random();
             float y = rand.nextFloat();
             values.add(new BarEntry(x, y));
-        }
+        }*/
         BarDataSet set1 = new BarDataSet(values, SET_LABEL);
-
         ArrayList<IBarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
 

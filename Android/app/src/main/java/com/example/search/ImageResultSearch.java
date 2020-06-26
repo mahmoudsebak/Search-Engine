@@ -373,6 +373,7 @@ public class ImageResultSearch extends AppCompatActivity {
                     protected Map<String, String> getParams() throws AuthFailureError {
                         Map<String, String> params = new HashMap<>();
                         params.put("suggestion", query);
+                        params.put("region",MainActivity.region);
                         return params;
                     }
                 };
