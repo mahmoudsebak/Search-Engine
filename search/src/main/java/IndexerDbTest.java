@@ -22,10 +22,10 @@ public class IndexerDbTest {
         // dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.youtube.com/", "alt");
         // dbAdapter.addImage("https://codeforces.com/", "https://www.geeksforgeeks.org/", "alt");
         // dbAdapter.addImage("https://codeforces.com/", "https://www.youtube.com/", "alt");
-        dbAdapter.addSearchWord("geeksforgeeks", "Europe");
-        dbAdapter.addSearchWord("geeksforgeeks", "Europe");
-        dbAdapter.addSearchWord("geeksforgeeks", "europe");
-        dbAdapter.addSearchWord("salah", "Egypt");
+        dbAdapter.addTrend("Donald Trump", "United States");
+        dbAdapter.addTrend("Recep Tayyip Erdogan", "Turkey");
+        dbAdapter.addTrend("Mohamed Salman", "Saudi Arabia");
+        dbAdapter.addTrend("Mohamed Salah", "Egypt");
 
         dbAdapter.resetPagesRank();
         ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
