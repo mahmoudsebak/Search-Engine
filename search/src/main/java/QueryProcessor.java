@@ -25,7 +25,7 @@ public class QueryProcessor {
                     .RemovingStoppingWords(WordsExtractionProcess.SplitStrings(query));
             String[] queryWords = words.toArray(new String[0]);
             if (isImage)
-                result = adapter.queryImage(query, queryWords, PAGES_LIMIT, page);
+                result = adapter.queryImage(query, PAGES_LIMIT, page);
             else {
                 result = adapter.queryPhrase(query, queryWords, PAGES_LIMIT, page);
                 for (HashMap<String, String> hashMap : result) {

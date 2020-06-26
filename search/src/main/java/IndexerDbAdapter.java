@@ -55,7 +55,8 @@ public class IndexerDbAdapter {
     private static final String TABLE_LINKS_NAME = "tb3_links";
     private static final String TABLE_LINKS_INDEX_NAME = "tb3_links_index";
     private static final String TABLE_IMAGES_NAME = "tb4_images";
-    private static final String TABLE_IMAGES_INDEX_NAME = "tb4_images_index";
+    // private static final String TABLE_IMAGES_INDEX_NAME = "tb4_url_images_index";
+    private static final String TABLE_IMAGES_INDEX2_NAME = "tb4_images_index";
     private static final String TABLE_QUERIES_NAME = "tb5_queries";
     private static final String TABLE_USER_URLS_NAME = "tb6_user_urls";
     private static final String TABLE_IMAGE_WORDS_NAME = "tb7_image_words";
@@ -99,12 +100,15 @@ public class IndexerDbAdapter {
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
                 "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                        + " %s varchar(256), %s varchar(512), %s TEXT,  FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                        + " %s varchar(256), %s varchar(512), %s TEXT, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
                 TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_ALT, COL_URL, TABLE_URLS_NAME, COL_URL);
     
-    private static final String TABLE4_INDEX_CREATE = String.format(
-                "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
-                COL_URL, COL_IMAGE);
+    // private static final String TABLE4_INDEX_CREATE = String.format(
+    //             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
+    //             COL_URL, COL_IMAGE);
+
+    private static final String TABLE4_INDEX2_CREATE = String.format("CREATE UNIQUE INDEX if not exists %s ON %s(%s)",
+            TABLE_IMAGES_INDEX2_NAME, TABLE_IMAGES_NAME, COL_IMAGE);
 
     private static final String TABLE5_QUERIES_CREATE = String.format(
             "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT, %s TEXT UNIQUE)", TABLE_QUERIES_NAME, COL_ID,
@@ -116,16 +120,17 @@ public class IndexerDbAdapter {
 
     private static final String TABLE7_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(100), %s varchar(100), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-            TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_URL, COL_URL, TABLE_URLS_NAME, COL_URL);
+                    + " %s varchar(100), %s varchar(100), %s varchar(512), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+            TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_IMAGE, COL_IMAGE, TABLE_IMAGES_NAME, COL_IMAGE);
 
     private static final String TABLE7_INDEX_CREATE = String.format(
             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX_NAME, TABLE_IMAGE_WORDS_NAME, COL_WORD,
-            COL_URL);
+            COL_IMAGE);
 
     private static final String TABLE7_INDEX2_CREATE = String.format(
             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX2_NAME, TABLE_IMAGE_WORDS_NAME, COL_STEM,
-            COL_URL);
+            COL_IMAGE);
+
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
     public IndexerDbAdapter() {
@@ -146,7 +151,8 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE3_LINKS_CREATE);
             stmt.addBatch(TABLE3_INDEX_CREATE);
             stmt.addBatch(TABLE4_IMAGES_CREATE);
-            stmt.addBatch(TABLE4_INDEX_CREATE);
+            // stmt.addBatch(TABLE4_INDEX_CREATE);
+            stmt.addBatch(TABLE4_INDEX2_CREATE);
             stmt.addBatch(TABLE5_QUERIES_CREATE);
             stmt.addBatch(TABLE6_USER_URLS_CREATE);
             stmt.addBatch(TABLE7_CREATE);
@@ -493,11 +499,12 @@ public class IndexerDbAdapter {
      * @param url   the url to add its image
      * @return true if added sucessfully, false otherwise
      */
-    public boolean addImage(String url, String image) {
-        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE);
+    public boolean addImage(String url, String image, String alt) {
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE, COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.setString(2, image);
+            ps.setString(3, alt);
             ps.executeUpdate();
         } catch (SQLException e) {
             return false;
@@ -510,13 +517,14 @@ public class IndexerDbAdapter {
      * @param url the url to add its imags
      * @param images list of images to be added
      */
-    public void addImages(String url, ArrayList<ImageSearch> images) {
+    public void addImages(String url, ArrayList<Image> images) {
         
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE,COL_ALT);
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+                TABLE_IMAGES_NAME, COL_URL, COL_IMAGE, COL_ALT, COL_ALT, COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (ImageSearch image : images) {
+            for (Image image : images) {
                 ps.setString(1, url);
-                ps.setString(2, image.getUrl());
+                ps.setString(2, image.getSrc());
                 ps.setString(3, image.getAlt());
                 ps.addBatch();
             }
@@ -530,18 +538,18 @@ public class IndexerDbAdapter {
      * add all words of a certian image
      * 
      * @param words       array of words
-     * @param url         the image url to add its words
+     * @param src         the image src to add its words
      */
-    public void addImageWords(String url, ArrayList<String> words){
+    public void addImageWords(String src, ArrayList<String> words){
         
         String sql = String.format(
                 "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)",
-                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL);
+                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMAGE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (String word : words) {
                 ps.setString(1, word);
                 ps.setString(2, WordsExtractionProcess.stem(word));
-                ps.setString(3, url);
+                ps.setString(3, src);
                 ps.addBatch();
             }
             ps.executeBatch();
@@ -661,8 +669,8 @@ public class IndexerDbAdapter {
             }
 
             // escape wildcard characters in phrase query
-            phrase = phrase.replace("_", "%_").replace("%", "%%");
-            ps.setString(words.length + 1, "%%" + phrase + "%%");
+            phrase = phrase.replace("%", "\\%").replace("_", "\\_");
+            ps.setString(words.length + 1, "%" + phrase + "%");
             ps.setInt(words.length + 2, (page - 1) * limit);
             ps.setInt(words.length + 3, limit);
 
@@ -689,34 +697,25 @@ public class IndexerDbAdapter {
      * get images from database by phrase
      * 
      * @param phrase the phrase to search for
-     * @param words splitted phrase as list of words
      * @param limit limit number of urls to be returned (recommended 10)
      * @param page  the page number of the result
      * @return list of hashmaps that contain url and image
      * 
      */
-    public ArrayList<HashMap<String, String>> queryImage(String phrase, String[] words, int limit, int page) {
-        String sql = String.format("SELECT %s, %s FROM %s"
-                        + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
-                        + " as temp USING (%s) JOIN %s USING (%s) JOIN %s USING (%s) WHERE %s in ("
-                        + makePlaceholders(words.length) + ") and %s < 1.7 and %s like ? "
-                        + "GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD,
-                COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_IMAGES_NAME, COL_URL, COL_WORD, COL_SCORE, COL_CONTENT,
-                COL_URL, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+    public ArrayList<HashMap<String, String>> queryImage(String phrase, int limit, int page) {
+        String sql = String.format("SELECT %s, %s FROM %s JOIN %s USING (%s)"
+                + " where %s like ? ORDER BY ( %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
+                COL_URL, COL_IMAGE, TABLE_IMAGES_NAME, TABLE_URLS_NAME, COL_URL, COL_ALT, COL_PAGE_RANK, COL_DATE_SCORE,
+                COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            for (int i = 0; i < words.length; i++) {
-                ps.setString(i + 1, words[i]);
-            }
-
             // escape wildcard characters in phrase query
-            phrase = phrase.replace("_", "%_").replace("%", "%%");
-            ps.setString(words.length + 1, "%%" + phrase + "%%");
-            ps.setInt(words.length + 2, (page - 1) * limit);
-            ps.setInt(words.length + 3, limit);
+            phrase = phrase.replace("%", "\\%").replace("_", "\\_");
+            ps.setString(1, "%" + phrase + "%");
+            ps.setInt(2, (page - 1) * limit);
+            ps.setInt(3, limit);
 
             try (ResultSet rs = ps.executeQuery()) {
                 
@@ -746,14 +745,15 @@ public class IndexerDbAdapter {
      * @return list of hashmaps of url and image
      */
     public ArrayList<HashMap<String, String>> queryImage(String[] words, int limit, int page) {
-        String sql = String.format("SELECT %s, %s FROM %s"
-                        + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
-                        + " as temp USING (%s) JOIN %s USING (%s) JOIN %s USING (%s) WHERE %s in ("
-                        + makePlaceholders(words.length) + ") and %s < 1.7 "
-                        + "GROUP by %s ORDER BY (3*sum(%s*idf) + %s + %s + %s) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, TABLE_WORDS_NAME, COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME, COL_WORD,
-                COL_WORD, TABLE_URLS_NAME, COL_URL, TABLE_IMAGES_NAME, COL_URL, COL_WORD, COL_SCORE,
-                COL_URL, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+        String sql = String.format(
+                "SELECT %s, %s FROM %s JOIN %s USING(%s) JOIN %s USING (%s)"
+                        + " LEFT JOIN (SELECT %s, COUNT(*) AS matching_words FROM %s WHERE %s in ("
+                        + makePlaceholders(words.length) + ")" + "GROUP BY %s) as temp USING(%s) WHERE %s in("
+                        + makePlaceholders(words.length) + ") GROUP BY %s"
+                        + " ORDER BY (COALESCE(matching_words, 0) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
+                COL_URL, COL_IMAGE, TABLE_IMAGES_NAME, TABLE_IMAGE_WORDS_NAME, COL_IMAGE, TABLE_URLS_NAME, COL_URL,
+                COL_IMAGE, TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_IMAGE, COL_IMAGE, COL_STEM, COL_IMAGE, COL_PAGE_RANK,
+                COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
 
@@ -762,8 +762,12 @@ public class IndexerDbAdapter {
             for (int i = 0; i < words.length; i++) {
                 ps.setString(i + 1, words[i]);
             }
-            ps.setInt(words.length + 1, (page - 1) * limit);
-            ps.setInt(words.length + 2, limit);
+            for (int i = 0; i < words.length; i++) {
+                ps.setString(words.length + i+1, WordsExtractionProcess.stem(words[i]));    
+            }
+
+            ps.setInt(2 * words.length + 1, (page - 1) * limit);
+            ps.setInt(2 * words.length + 2, limit);
 
             try (ResultSet rs = ps.executeQuery()) {
                 
