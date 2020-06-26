@@ -101,11 +101,8 @@
         android:id="@+id/websSteGridView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:horizontalSpacing="20dp"
-        android:verticalSpacing="10dp"
-        android:numColumns="2"
+        android:numColumns="1"
         android:paddingStart="5dp"
-        android:paddingLeft="5dp"
         android:paddingEnd="5dp"
         tools:layout_editor_absoluteX="1dp" />
 </LinearLayout>

@@ -17,11 +17,15 @@ public class IndexerDbTest {
         dbAdapter.addWord("programming", "https://codeforces.com/", 0.4);
         dbAdapter.addWord("competitive", "https://codeforces.com/", 0.5);
         dbAdapter.addWord("competitive", "https://www.geeksforgeeks.org/", 0.5);
-        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.geeksforgeeks.org/", "alt");
-        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://codeforces.com/", "alt");
-        dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.youtube.com/", "alt");
-        dbAdapter.addImage("https://codeforces.com/", "https://www.geeksforgeeks.org/", "alt");
-        dbAdapter.addImage("https://codeforces.com/", "https://www.youtube.com/", "alt");
+        // dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.geeksforgeeks.org/", "alt");
+        // dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://codeforces.com/", "alt");
+        // dbAdapter.addImage("https://www.geeksforgeeks.org/", "https://www.youtube.com/", "alt");
+        // dbAdapter.addImage("https://codeforces.com/", "https://www.geeksforgeeks.org/", "alt");
+        // dbAdapter.addImage("https://codeforces.com/", "https://www.youtube.com/", "alt");
+        dbAdapter.addSearchWord("geeksforgeeks", "Europe");
+        dbAdapter.addSearchWord("geeksforgeeks", "Europe");
+        dbAdapter.addSearchWord("geeksforgeeks", "europe");
+        dbAdapter.addSearchWord("salah", "Egypt");
 
         dbAdapter.resetPagesRank();
         ArrayList<HashMap<String, String>> arr = dbAdapter.queryWords(new String [] {"programming"}, 10, 1);
