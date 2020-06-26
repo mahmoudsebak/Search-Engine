@@ -42,8 +42,9 @@ public class IndexerDbAdapter {
 
     public static final String COL_FREQ = "freq";
 
-    public static final String COL_COUNT = "count";
+    public static final String COL_PERSON = "person";
     public static final String COL_REGION = "region";
+    public static final String COL_COUNT = "count";
 
     private Connection conn;
     private static final String DATABASE_NAME = "dba_search_indexer";
@@ -137,7 +138,7 @@ public class IndexerDbAdapter {
 
     private static final String TABLE8_CREATE = String.format(
                 "CREATE TABLE IF NOT EXISTS %s(%s varchar(256) PRIMARY KEY, %s varchar(256), %s INTEGER)",
-                TABLE_TRENDS_NAME, COL_WORD, COL_REGION, COL_COUNT);
+                TABLE_TRENDS_NAME, COL_PERSON, COL_REGION, COL_COUNT);
 
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
@@ -230,17 +231,17 @@ public class IndexerDbAdapter {
     }
 
     /**
-     * add search word to the database
+     * add a trend to the database
      * 
      * @param word the search word to be added to database
      * @param region the region of the user
-     * @return whether the word is added successfully or not
+     * @return whether the person is added successfully or not
      */
-    public boolean addSearchWord(String word, String region) {
+    public boolean addTrend(String person, String region) {
         String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = %s + 1",
-                 TABLE_TRENDS_NAME, COL_WORD, COL_REGION, COL_COUNT, COL_COUNT, COL_COUNT);
+                 TABLE_TRENDS_NAME, COL_PERSON, COL_REGION, COL_COUNT, COL_COUNT, COL_COUNT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, word);
+            ps.setString(1, person);
             ps.setString(2, region);
             ps.setInt(3, 1);
             ps.executeUpdate();
@@ -251,10 +252,10 @@ public class IndexerDbAdapter {
     }
 
      /**
-     * @return search words and their count
+     * @return most searched persons and their counts
      */
-    public ArrayList<Pair<String,Integer>> fetchSearchWords() {
-        String sql = String.format("SELECT %s, %s FROM %s LIMIT 7", COL_WORD, COL_COUNT, TABLE_TRENDS_NAME);
+    public ArrayList<Pair<String,Integer>> fetchTrends() {
+        String sql = String.format("SELECT %s, %s FROM %s LIMIT 10", COL_PERSON, COL_COUNT, TABLE_TRENDS_NAME);
         ArrayList<Pair<String,Integer>> ret = new ArrayList<>();
         try (Statement stmt = conn.createStatement()) {
 
@@ -274,6 +275,7 @@ public class IndexerDbAdapter {
         }
         return ret;
     }
+    
     /**
      * add url to the database
      * 
