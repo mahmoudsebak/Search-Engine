@@ -85,7 +85,7 @@ public class IndexerDbAdapter {
             TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
-            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
             COL_URL);
 
     private static final String TABLE2_INDEX2_CREATE = String.format(
