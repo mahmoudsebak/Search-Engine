@@ -599,8 +599,8 @@ public class IndexerDbAdapter {
     public void addImageWords(String src, ArrayList<String> words){
         
         String sql = String.format(
-                "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?)",
-                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMAGE);
+                "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMAGE, COL_STEM, COL_STEM);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             for (String word : words) {
                 ps.setString(1, word);
