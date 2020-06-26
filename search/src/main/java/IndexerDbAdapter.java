@@ -42,6 +42,9 @@ public class IndexerDbAdapter {
 
     public static final String COL_FREQ = "freq";
 
+    public static final String COL_COUNT = "count";
+    public static final String COL_REGION = "region";
+
     private Connection conn;
     private static final String DATABASE_NAME = "dba_search_indexer";
     private static final String USERNAME = "root";
@@ -62,6 +65,7 @@ public class IndexerDbAdapter {
     private static final String TABLE_IMAGE_WORDS_NAME = "tb7_image_words";
     private static final String TABLE_IMAGE_WORDS_INDEX_NAME = "tb7_image_words_url_index";
     private static final String TABLE_IMAGE_WORDS_INDEX2_NAME = "tb7_image_stem_url_index";
+    private static final String TABLE_TRENDS_NAME = "tb8_trends";
 
     // SQL statement used to create the database
     private static final String TABLE1_CREATE = String.format(
@@ -131,6 +135,10 @@ public class IndexerDbAdapter {
             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX2_NAME, TABLE_IMAGE_WORDS_NAME, COL_STEM,
             COL_IMAGE);
 
+    private static final String TABLE8_CREATE = String.format(
+                "CREATE TABLE IF NOT EXISTS %s(%s varchar(256) PRIMARY KEY, %s varchar(256), %s INTEGER)",
+                TABLE_TRENDS_NAME, COL_WORD, COL_REGION, COL_COUNT);
+
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
     public IndexerDbAdapter() {
@@ -158,6 +166,7 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE7_CREATE);
             stmt.addBatch(TABLE7_INDEX_CREATE);
             stmt.addBatch(TABLE7_INDEX2_CREATE);
+            stmt.addBatch(TABLE8_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
             e.printStackTrace();
@@ -218,6 +227,26 @@ public class IndexerDbAdapter {
             e.printStackTrace();
         }
         return 0;
+    }
+    /**
+     * add search word to the database
+     * 
+     * @param word the search word to be added to database
+     * @param region the region of the user
+     * @return whether the word is added successfully or not
+     */
+    public boolean addSearchWord(String word, String region) {
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = %s + 1",
+                 TABLE_TRENDS_NAME, COL_WORD, COL_REGION, COL_COUNT, COL_COUNT, COL_COUNT);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, word);
+            ps.setString(2, region);
+            ps.setInt(3, 1);
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            return false;
+        }
+        return true;
     }
 
     /**
