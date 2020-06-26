@@ -228,6 +228,7 @@ public class IndexerDbAdapter {
         }
         return 0;
     }
+
     /**
      * add search word to the database
      * 
@@ -249,6 +250,30 @@ public class IndexerDbAdapter {
         return true;
     }
 
+     /**
+     * @return search words and their count
+     */
+    public ArrayList<Pair<String,Integer>> fetchSearchWords() {
+        String sql = String.format("SELECT %s, %s FROM %s LIMIT 7", COL_WORD, COL_COUNT, TABLE_TRENDS_NAME);
+        ArrayList<Pair<String,Integer>> ret = new ArrayList<>();
+        try (Statement stmt = conn.createStatement()) {
+
+            try (ResultSet rs = stmt.executeQuery(sql)) {
+                
+                while (rs.next()) {
+                    Pair<String,Integer> elem = new Pair<String,Integer>(rs.getString(1), rs.getInt(2));
+                    ret.add(elem);
+                }
+                
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return ret;
+    }
     /**
      * add url to the database
      * 
