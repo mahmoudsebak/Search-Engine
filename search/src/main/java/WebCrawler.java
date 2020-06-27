@@ -9,7 +9,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.PriorityBlockingQueue;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -20,8 +20,8 @@ import org.jsoup.select.Elements;
  **/
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
-        Set<String> seedPages  = new HashSet<String>();
-        seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
+        ArrayList<String> seedPages  = new ArrayList<>();
+        // seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
         seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("https://www.imdb.com/");
         seedPages.add("https://www.spotify.com/eg-en/");
@@ -35,7 +35,7 @@ public class WebCrawler {
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
         ArrayList<String> visited = adapter.getCrawledURLs();
-        ArrayList<String> toVisit = adapter.getUnCrawledURLs(); 
+        ArrayList<String> toVisit = adapter.getUnCrawledURLs();
         for (String page : seedPages) 
             toVisit.add(page);
         int ThreadNo = Integer.parseInt(args[0]);
@@ -96,23 +96,54 @@ class CrawlerRunnable implements Runnable {
         }
     }
 }
+/**
+ * This class is used to give higher priortity to the pages whose base url is accessed last
+ **/
+class priorityComparator implements Comparator<String>{ 
+    private ConcurrentHashMap <String, Integer> visitPriority;
+    public priorityComparator(ConcurrentHashMap <String, Integer> visitPriority){
+        this.visitPriority = visitPriority;
+    }
 
+    @Override
+    public int compare(String s1, String s2) { 
+        try {
+			return this.visitPriority.get(new URL(s1).getHost()) 
+			        - this.visitPriority.get(new URL(s2).getHost());
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+        }
+        return 0;
+    } 
+} 
+
+/**
+ * This class is used to implement crawler functionalities
+ **/
 class Crawler {
     private IndexerDbAdapter adapter;
     private ConcurrentHashMap <String, Boolean> pagesVisited;
-    private LinkedBlockingQueue<String> pagesToVisit;
+    private ConcurrentHashMap <String, Integer> visitPriority;
+    private PriorityBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
     private static final int PAGES_TO_BE_CRAWLED = 50000;
     private static final int PAGES_TO_BE_RECRAWLED = 10;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
+
         this.pagesVisited = new ConcurrentHashMap<String, Boolean>();
-        this.pagesToVisit = new LinkedBlockingQueue<String>();
+        this.visitPriority = new ConcurrentHashMap<String, Integer>();
+        this.pagesToVisit = new PriorityBlockingQueue<String>(PAGES_TO_BE_CRAWLED, new priorityComparator(this.visitPriority));
         this.isRecraler = isRecrawler;
         this.adapter = adapter;
         if(toVisit != null)
         {
             for (String page : toVisit) {
+                try {
+					this.visitPriority.put(new URL(page).getHost(), 0);
+				} catch (MalformedURLException e) {
+					e.printStackTrace();
+				}
                 this.pagesToVisit.offer(page);
             }
         }
@@ -140,6 +171,20 @@ class Crawler {
         return this.pagesToVisit.size();
     }
 
+    /**
+     * this function is used to refill the priority queue to reorder the queue after visiiting a url 
+     */
+    public void refillQueue(){
+        PriorityBlockingQueue<String> temp = new PriorityBlockingQueue<String>(PAGES_TO_BE_CRAWLED, new priorityComparator(this.visitPriority));;
+        String item = this.pagesToVisit.poll();
+        while(item != null)
+        {
+            temp.add(item);
+            item = this.pagesToVisit.poll();
+        }
+        this.pagesToVisit = temp;
+    }
+    
     /**
      * This function is used to crawl a certain url following robot rules
 	 *
@@ -171,12 +216,21 @@ class Crawler {
     public synchronized int visitURL(String url) {
         if (!this.isRecraler && this.pagesVisited.size() + this.pagesToVisit.size() >= PAGES_TO_BE_CRAWLED) return 1;
         if (this.isRecraler && this.pagesVisited.size() == PAGES_TO_BE_RECRAWLED) return 1;  
-        if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
         try {
             url = this.normalizeUrl(url);
         } catch (URISyntaxException e) {
             return 0;
         }
+        if (this.pagesVisited.containsKey(url)) return 0;    // Already visited
+		try {
+			int count = this.visitPriority.containsKey(new URL(url).getHost()) 
+                        ? this.visitPriority.get(new URL(url).getHost()) : 0;
+            this.visitPriority.put(new URL(url).getHost(), count + 1);
+            this.refillQueue();
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+		}
+    
         this.pagesVisited.put(url, true);
         this.adapter.addURL(url);
         this.adapter.crawlURL(url);
@@ -225,7 +279,12 @@ class Crawler {
     {
         if(!this.pagesToVisit.contains(page) && !this.pagesVisited.containsKey(page))
         {
-            this.pagesToVisit.offer(page);
+            try {
+                this.visitPriority.put(new URL(page).getHost(), 0);
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+            }
+            this.pagesToVisit.add(page);
             this.adapter.addURL(page);
         }
         this.adapter.addLink(url, page);
