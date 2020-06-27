@@ -137,8 +137,9 @@ public class IndexerDbAdapter {
             COL_IMAGE);
 
     private static final String TABLE8_CREATE = String.format(
-                "CREATE TABLE IF NOT EXISTS %s(%s varchar(256) PRIMARY KEY, %s varchar(256), %s INTEGER)",
-                TABLE_TRENDS_NAME, COL_PERSON, COL_REGION, COL_COUNT);
+            "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
+                    + " %s varchar(256), %s varchar(256), %s INTEGER, UNIQUE(%s, %s))",
+            TABLE_TRENDS_NAME, COL_ID, COL_PERSON, COL_REGION, COL_COUNT, COL_PERSON, COL_REGION);
 
     private static final String DATABASE_CREATE = String.format("CREATE DATABASE IF NOT EXISTS %s", DATABASE_NAME);
 
@@ -238,7 +239,7 @@ public class IndexerDbAdapter {
      * @return whether the person is added successfully or not
      */
     public boolean addTrend(String person, String region) {
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = %s + 1",
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s) + 1",
                  TABLE_TRENDS_NAME, COL_PERSON, COL_REGION, COL_COUNT, COL_COUNT, COL_COUNT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, person);
@@ -246,6 +247,7 @@ public class IndexerDbAdapter {
             ps.setInt(3, 1);
             ps.executeUpdate();
         } catch (SQLException e) {
+            e.printStackTrace();
             return false;
         }
         return true;
@@ -254,15 +256,17 @@ public class IndexerDbAdapter {
      /**
      * @return most searched persons and their counts
      */
-    public ArrayList<Pair<String,Integer>> fetchTrends() {
-        String sql = String.format("SELECT %s, %s FROM %s LIMIT 10", COL_PERSON, COL_COUNT, TABLE_TRENDS_NAME);
-        ArrayList<Pair<String,Integer>> ret = new ArrayList<>();
-        try (Statement stmt = conn.createStatement()) {
-
-            try (ResultSet rs = stmt.executeQuery(sql)) {
+    public ArrayList<HashMap<String, Object>> fetchTrends(String region) {
+        String sql = String.format("SELECT %s, %s FROM %s where %s = ? LIMIT 10", COL_PERSON, COL_COUNT, TABLE_TRENDS_NAME, COL_REGION);
+        ArrayList<HashMap<String, Object>> ret = new ArrayList<>();
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, region);
+            try (ResultSet rs = ps.executeQuery()) {
                 
                 while (rs.next()) {
-                    Pair<String,Integer> elem = new Pair<String,Integer>(rs.getString(1), rs.getInt(2));
+                    HashMap<String, Object> elem = new HashMap<>();
+                    elem.put("person", rs.getString(1));
+                    elem.put("count", rs.getInt(2));
                     ret.add(elem);
                 }
                 
