@@ -49,6 +49,11 @@ public class CustomAdapterForWebsiteList extends ArrayAdapter {
         // set Website title
         TextView title = (TextView) listItem.findViewById(R.id.textView);
         title.setText(currentWebsite.getHeader());
+
+        //Set url
+        TextView url = (TextView) listItem.findViewById(R.id.url);
+        url.setText(currentWebsite.getUrl());
+
         // set Website Description
         TextView description = (TextView) listItem.findViewById(R.id.textView2);
         description.setText(currentWebsite.getDescription());

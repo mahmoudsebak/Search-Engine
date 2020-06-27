@@ -109,7 +109,7 @@ public class ShowTrendsCharts extends AppCompatActivity {
     private static final int MAX_X_VALUE = 10;
     private static final int MAX_Y_VALUE = 50;
     private static final int MIN_Y_VALUE = 0;
-    private static final String SET_LABEL = "Most trends words in"+MainActivity.region;
+    private static final String SET_LABEL = "Most trends words in "+MainActivity.region;
     public static  String[] DAYS ;
 
     HorizontalBarChart barChart;
@@ -121,6 +121,7 @@ public class ShowTrendsCharts extends AppCompatActivity {
         setContentView(R.layout.activity_show_trends_charts);
         barChart =findViewById(R.id.fragment_verticalbarchart_chart);
         BarData data = createChartData();
+        data.setBarWidth(0.2f);
         configureChartAppearance();
         prepareChartData(data);
     }
@@ -129,6 +130,7 @@ public class ShowTrendsCharts extends AppCompatActivity {
         barChart.getDescription().setEnabled(false);
         barChart.setDrawValueAboveBar(false);
         XAxis xAxis = barChart.getXAxis();
+        xAxis.setGranularity(1f);
         DAYS=MainActivity.trendyWords.toArray(new String[0]);
         xAxis.setValueFormatter(new ValueFormatter() {
             @Override
@@ -140,19 +142,11 @@ public class ShowTrendsCharts extends AppCompatActivity {
 
     private BarData createChartData() {
         ArrayList<BarEntry> values = MainActivity.trends;
-        /*for (int i = 0; i < MAX_X_VALUE; i++) {
-            float x = i;
-            Random rand=new Random();
-            float y = rand.nextFloat();
-            values.add(new BarEntry(x, y));
-        }*/
         BarDataSet set1 = new BarDataSet(values, SET_LABEL);
         ArrayList<IBarDataSet> dataSets = new ArrayList<>();
         dataSets.add(set1);
 
-        BarData data = new BarData(dataSets);
-
-        return data;
+        return new BarData(dataSets);
     }
 
     private void prepareChartData(BarData data) {

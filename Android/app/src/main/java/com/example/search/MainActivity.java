@@ -95,7 +95,6 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
 
-                region=spinner.getSelectedItem().toString();
             }
 
             @Override
@@ -109,6 +108,7 @@ public class MainActivity extends AppCompatActivity {
         showTrend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                region=spinner.getSelectedItem().toString();
                 getResponse(
                         Request.Method.GET,
                         ULRConnection.url+"/search/trends?region="+region,
@@ -144,6 +144,7 @@ public class MainActivity extends AppCompatActivity {
         ImageButton imageButton=(ImageButton) findViewById(R.id.imageButton);
         imageButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
+                region=spinner.getSelectedItem().toString();
                 Thread sendQuery=new Thread(new Runnable() {
                     @Override
                     public void run() {
