@@ -239,7 +239,7 @@ public class IndexerDbAdapter {
      * @return whether the person is added successfully or not
      */
     public boolean addTrend(String person, String region) {
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s) + 1",
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = %s + 1",
                  TABLE_TRENDS_NAME, COL_PERSON, COL_REGION, COL_COUNT, COL_COUNT, COL_COUNT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, person);
@@ -893,7 +893,7 @@ public class IndexerDbAdapter {
      * @param url the url that the user clicked on
      */
     public void addUserURL(String url) {
-        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, 1) ON DUPLICATE KEY UPDATE %s = VALUES(%s)+1",
+        String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, 1) ON DUPLICATE KEY UPDATE %s = %s + 1",
                 TABLE_USER_URLS_NAME, COL_URL, COL_FREQ, COL_FREQ, COL_FREQ);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
