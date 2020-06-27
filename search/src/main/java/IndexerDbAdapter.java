@@ -257,7 +257,8 @@ public class IndexerDbAdapter {
      * @return most searched persons and their counts
      */
     public ArrayList<HashMap<String, Object>> fetchTrends(String region) {
-        String sql = String.format("SELECT %s, %s FROM %s where %s = ? LIMIT 10", COL_PERSON, COL_COUNT, TABLE_TRENDS_NAME, COL_REGION);
+        String sql = String.format("SELECT %s, %s FROM %s where %s = ? ORDER BY %s DESC LIMIT 10", COL_PERSON,
+                COL_COUNT, TABLE_TRENDS_NAME, COL_REGION, COL_COUNT);
         ArrayList<HashMap<String, Object>> ret = new ArrayList<>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, region);
