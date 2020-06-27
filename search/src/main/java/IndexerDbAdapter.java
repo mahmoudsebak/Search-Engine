@@ -498,7 +498,7 @@ public class IndexerDbAdapter {
     public void addWords(HashMap<String, Double> wordsScores, String url) {
 
         String sql = String.format(
-                "INSERT INTO %s(%s, %s, %s, %s) VALUES" + makeParentheses(wordsScores.size(), 4)
+                "INSERT IGNORE INTO %s(%s, %s, %s, %s) VALUES" + makeParentheses(wordsScores.size(), 4)
                         + "ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
                 TABLE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -580,16 +580,19 @@ public class IndexerDbAdapter {
      */
     public void addImages(String url, ArrayList<Image> images) {
         
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+        String sql = String.format(
+                "INSERT IGNORE INTO %s(%s, %s, %s) VALUES " + makeParentheses(images.size(), 3)
+                        + " ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
                 TABLE_IMAGES_NAME, COL_URL, COL_IMAGE, COL_ALT, COL_ALT, COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 0;
             for (Image image : images) {
-                ps.setString(1, url);
-                ps.setString(2, image.getSrc());
-                ps.setString(3, image.getAlt());
-                ps.addBatch();
+                ps.setString(i+1, url);
+                ps.setString(i+2, image.getSrc());
+                ps.setString(i+3, image.getAlt());
+                i += 3;
             }
-            ps.executeBatch();
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -602,18 +605,21 @@ public class IndexerDbAdapter {
      * @param src         the image src to add its words
      */
     public void addImageWords(String src, ArrayList<String> words){
-        
+        if (words.size() < 1)
+            return;
         String sql = String.format(
-                "INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+                "INSERT IGNORE INTO %s(%s, %s, %s) VALUES " + makeParentheses(words.size(), 3)
+                        + " ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
                 TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMAGE, COL_STEM, COL_STEM);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            int i = 0;
             for (String word : words) {
-                ps.setString(1, word);
-                ps.setString(2, WordsExtractionProcess.stem(word));
-                ps.setString(3, src);
-                ps.addBatch();
+                ps.setString(i+1, word);
+                ps.setString(i+2, WordsExtractionProcess.stem(word));
+                ps.setString(i+3, src);
+                i += 3;
             }
-            ps.executeBatch();
+            ps.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
         }
