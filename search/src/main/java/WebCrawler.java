@@ -21,16 +21,16 @@ import org.jsoup.select.Elements;
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         ArrayList<String> seedPages  = new ArrayList<>();
-        // seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
-        //seedPages.add("https://www.geeksforgeeks.org/");
+        seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
+        seedPages.add("https://www.geeksforgeeks.org/");
         seedPages.add("https://www.imdb.com/");
-        //seedPages.add("https://www.spotify.com/eg-en/");
-        //seedPages.add("https://edition.cnn.com/");
-        //seedPages.add("https://www.gamespot.com/");
-        //seedPages.add("https://www.skysports.com/");
-        //seedPages.add("https://cooking.nytimes.com/");
-        //seedPages.add("https://en.unesco.org/");
-        //seedPages.add("https://www.who.int/");
+        seedPages.add("https://www.spotify.com/eg-en/");
+        seedPages.add("https://edition.cnn.com/");
+        seedPages.add("https://www.gamespot.com/");
+        seedPages.add("https://www.skysports.com/");
+        seedPages.add("https://cooking.nytimes.com/");
+        seedPages.add("https://en.unesco.org/");
+        seedPages.add("https://www.who.int/");
 
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
@@ -287,7 +287,7 @@ class Crawler {
             this.pagesToVisit.add(page);
             this.adapter.addURL(page);
         }
-        this.adapter.addLink(url, page);
+        this.adapter.addLink(this.adapter.getURLID(url), this.adapter.getURLID(page));
     }
 
     /**

@@ -32,10 +32,11 @@ public class Indexer {
                 adapter.updateURL(url, indexer.getContent(), indexer.getTitle(),
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
-                adapter.addWords(wordScore, url);
-                adapter.addImages(url, indexer.getImages());
+                int URLID = adapter.getURLID(url);
+                adapter.addWords(wordScore, URLID);
+                adapter.addImages(URLID, indexer.getImages());
                 for(Image img : indexer.getImages())
-                    adapter.addImageWords(img.getSrc(), img.getWords());
+                    adapter.addImageWords(adapter.getImgID(img.getSrc()), img.getWords());
                 
                 long endTime = System.currentTimeMillis();
                 System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
