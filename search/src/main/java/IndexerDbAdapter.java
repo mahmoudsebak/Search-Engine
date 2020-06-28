@@ -158,18 +158,18 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE1_CREATE);
             stmt.addBatch(TABLE1_INDEX_CREATE);
             stmt.addBatch(TABLE2_CREATE);
-            stmt.addBatch(TABLE2_INDEX_CREATE);
-            stmt.addBatch(TABLE2_INDEX2_CREATE);
+            // stmt.addBatch(TABLE2_INDEX_CREATE);
+            // stmt.addBatch(TABLE2_INDEX2_CREATE);
             stmt.addBatch(TABLE3_LINKS_CREATE);
-            stmt.addBatch(TABLE3_INDEX_CREATE);
+            // stmt.addBatch(TABLE3_INDEX_CREATE);
             stmt.addBatch(TABLE4_IMAGES_CREATE);
             // stmt.addBatch(TABLE4_INDEX_CREATE);
-            stmt.addBatch(TABLE4_INDEX2_CREATE);
+            // stmt.addBatch(TABLE4_INDEX2_CREATE);
             stmt.addBatch(TABLE5_QUERIES_CREATE);
             stmt.addBatch(TABLE6_USER_URLS_CREATE);
             stmt.addBatch(TABLE7_CREATE);
-            stmt.addBatch(TABLE7_INDEX_CREATE);
-            stmt.addBatch(TABLE7_INDEX2_CREATE);
+            // stmt.addBatch(TABLE7_INDEX_CREATE);
+            // stmt.addBatch(TABLE7_INDEX2_CREATE);
             stmt.addBatch(TABLE8_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
@@ -547,7 +547,8 @@ public class IndexerDbAdapter {
      * @param url         the url to add its words
      */
     public void addWords(HashMap<String, Double> wordsScores, int URLID) {
-
+        if (wordsScores.size() < 1)
+            return;
         String sql = String.format(
                 "INSERT IGNORE INTO %s(%s, %s, %s, %s) VALUES" + makeParentheses(wordsScores.size(), 4)
                         + "ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
@@ -631,7 +632,8 @@ public class IndexerDbAdapter {
      * @param images list of images to be added
      */
     public void addImages(int URLID, ArrayList<Image> images) {
-        
+        if (images.size() < 1)
+            return;
         String sql = String.format(
                 "INSERT IGNORE INTO %s(%s, %s, %s) VALUES " + makeParentheses(images.size(), 3)
                         + " ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
@@ -725,9 +727,10 @@ public class IndexerDbAdapter {
                 + " where %s in (" + makePlaceholders(words.length) + ") GROUP BY %s) as temp2 USING (%s)"
                 + " WHERE %s in (" + makePlaceholders(words.length) + ") and %s < 1.7 GROUP by %s"
                 + " ORDER BY (4*sum(%s*idf) +  COALESCE(matching_words, 0) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
-                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_URL_ID, TABLE_WORDS_NAME, COL_WORD, COL_URL_ID, COL_URL_ID,
-                COL_STEM, COL_SCORE, COL_URL_ID, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL_ID,
+                TABLE_WORDS_NAME, COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_URL_ID, TABLE_WORDS_NAME,
+                COL_WORD, COL_URL_ID, COL_URL_ID, COL_STEM, COL_SCORE, COL_URL_ID, COL_SCORE, COL_PAGE_RANK,
+                COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
 
@@ -775,8 +778,8 @@ public class IndexerDbAdapter {
                 + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
                 + " as temp USING (%s) JOIN %s t3 ON t1.%s = t3.%s WHERE %s in (" + makePlaceholders(words.length)
                 + ") and %s < 1.7 and %s like ? GROUP by %s ORDER BY (3*sum(%s*idf) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
-                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_STEM, COL_SCORE, COL_CONTENT, COL_URL,
+                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, TABLE_WORDS_NAME,
+                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_STEM, COL_SCORE, COL_CONTENT, COL_URL_ID,
                 COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
@@ -1014,7 +1017,7 @@ public class IndexerDbAdapter {
     public int removeDuplicateImages() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_IMAGES_NAME, TABLE_IMAGES_NAME, COL_ID, COL_ID, COL_URL, COL_URL, COL_IMAGE, COL_IMAGE);
+                TABLE_IMAGES_NAME, TABLE_IMAGES_NAME, COL_ID, COL_ID, COL_URL_ID, COL_URL_ID, COL_IMAGE, COL_IMAGE);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
@@ -1038,7 +1041,7 @@ public class IndexerDbAdapter {
     public int removeDuplicateWords() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_WORDS_NAME, TABLE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_URL, COL_URL);
+                TABLE_WORDS_NAME, TABLE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_URL_ID, COL_URL_ID);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
@@ -1050,8 +1053,8 @@ public class IndexerDbAdapter {
     public int removeDuplicateImageWords() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_IMAGE_WORDS_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_IMAGE,
-                COL_IMAGE);
+                TABLE_IMAGE_WORDS_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_IMG_ID,
+                COL_IMG_ID);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
