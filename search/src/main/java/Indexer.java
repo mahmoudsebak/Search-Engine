@@ -83,7 +83,7 @@ public class Indexer {
         listOfWords = new ArrayList<ArrayList<String>>();
 
         totalNumberOfWords = 0;
-        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "a", "meta"};
+        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "meta"};
         String title = doc.title();
         ArrayList<String> words = WordsExtractionProcess.SplitStrings(title);
         totalNumberOfWords += words.size();
