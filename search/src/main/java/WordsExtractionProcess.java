@@ -250,19 +250,25 @@ public class WordsExtractionProcess {
         /**
          * This function handle words ends with er,
          **/
-        private void Step0(){
+        private boolean Step0(){
             if(word.charAt(word.length()-1)=='r'){
-                if(word.charAt(word.length()-2)=='e')
+                if(word.charAt(word.length()-2)=='e'){
                     k-=2;
+                    return  true;
+                }
             }
             else if(word.charAt(word.length()-1)=='y'){
-                if(word.charAt(word.length()-2)=='l')
+                if(word.charAt(word.length()-2)=='l'){
                     k-=2;
+                    return  true;
+                }
             }
             if(ends("ves")){
                 k-=2;
                 word=word.substring(0,k)+'f';
+                return true;
             }
+            return false;
         }
     
         /** step1() gets rid of plurals and -ed or -ing. e.g.
@@ -544,13 +550,14 @@ public class WordsExtractionProcess {
             NewWord(word);
             k = i - 1 ;
             if (k > 1) {
-                Step0();
-                Step1();
-                Step2();
-                Step3();
-                step4();
-                Step5();
-                step6();
+                if(!Step0()){
+                    Step1();
+                    Step2();
+                    Step3();
+                    step4();
+                    Step5();
+                    step6();   
+                }
             }
             return this.word.substring(0,k+1);
         }

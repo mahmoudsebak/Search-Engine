@@ -40,7 +40,6 @@ public class Indexer {
                 
                 long endTime = System.currentTimeMillis();
                 System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
-                
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -122,18 +121,18 @@ public class Indexer {
      * This function get last modified date stored by server
      **/
     public String getLastModified() {
-        try {
-            String date = connection.execute().header("Last-Modified");
-            ArrayList<String> dateArrayList = new ArrayList<>();
-            if (date == null)
-                return "1 jan 1990";
-            else {
-                dateArrayList = WordsExtractionProcess.SplitStrings(date);
-                return dateArrayList.get(1) +" "+ dateArrayList.get(2) + " " + dateArrayList.get(3);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     String date = connection.execute().header("Last-Modified");
+        //     ArrayList<String> dateArrayList = new ArrayList<>();
+        //     if (date == null)
+        //         return "1 jan 1990";
+        //     else {
+        //         dateArrayList = WordsExtractionProcess.SplitStrings(date);
+        //         return dateArrayList.get(1) +" "+ dateArrayList.get(2) + " " + dateArrayList.get(3);
+        //     }
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        // }
         return "1 jan 1990";
     }
     

@@ -21,16 +21,17 @@ import org.jsoup.select.Elements;
 public class WebCrawler {
     public static void main(String[] args) throws InterruptedException {
         ArrayList<String> seedPages  = new ArrayList<>();
-        seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
-        seedPages.add("https://www.geeksforgeeks.org/");
-        seedPages.add("https://www.imdb.com/");
-        seedPages.add("https://www.spotify.com/eg-en/");
-        seedPages.add("https://edition.cnn.com/");
-        seedPages.add("https://www.gamespot.com/");
-        seedPages.add("https://www.skysports.com/");
-        seedPages.add("https://cooking.nytimes.com/");
-        seedPages.add("https://en.unesco.org/");
-        seedPages.add("https://www.who.int/");
+        // seedPages.add("https://en.wikipedia.org/wiki/Main_Page");
+        // seedPages.add("https://www.geeksforgeeks.org/");
+        // seedPages.add("https://www.imdb.com/");
+        // seedPages.add("https://www.spotify.com/eg-en/");
+        // seedPages.add("https://edition.cnn.com/");
+        // seedPages.add("https://www.gamespot.com/");
+        // seedPages.add("https://www.skysports.com/");
+        // seedPages.add("https://cooking.nytimes.com/");
+        // seedPages.add("https://en.unesco.org/");
+        // seedPages.add("https://www.who.int/");
+        seedPages.add("https://open.spotify.com/artist/7vk5e3vY1uw9plTHJAMwjN");
 
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
@@ -126,7 +127,7 @@ class Crawler {
     private ConcurrentHashMap <String, Integer> visitPriority;
     private PriorityBlockingQueue<String> pagesToVisit;
     private Boolean isRecraler;
-    private static final int PAGES_TO_BE_CRAWLED = 8000;
+    private static final int PAGES_TO_BE_CRAWLED = 10000;
     private static final int PAGES_TO_BE_RECRAWLED = 10;
 
     public Crawler(ArrayList<String> toVisit, ArrayList<String> visited, IndexerDbAdapter adapter, Boolean isRecrawler) {
