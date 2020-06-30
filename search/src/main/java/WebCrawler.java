@@ -34,8 +34,8 @@ public class WebCrawler {
 
         IndexerDbAdapter adapter = new IndexerDbAdapter();
         adapter.open();
-        ArrayList<String> visited = new ArrayList<>();//adapter.getCrawledURLs();
-        ArrayList<String> toVisit= new ArrayList<>();//adapter.getUnCrawledURLs();
+        ArrayList<String> visited = adapter.getCrawledURLs();
+        ArrayList<String> toVisit = adapter.getUnCrawledURLs();
         for (String page : seedPages) 
             toVisit.add(page);
         int ThreadNo = Integer.parseInt(args[0]);
@@ -107,12 +107,12 @@ class priorityComparator implements Comparator<String>{
 
     @Override
     public int compare(String s1, String s2) { 
-        // try {
-		// 	return this.visitPriority.get(new URL(s1).getHost()) 
-		// 	        - this.visitPriority.get(new URL(s2).getHost());
-		// } catch (MalformedURLException e) {
-		// 	e.printStackTrace();
-        // }
+        try {
+			return this.visitPriority.get(new URL(s1).getHost()) 
+			        - this.visitPriority.get(new URL(s2).getHost());
+		} catch (MalformedURLException e) {
+			e.printStackTrace();
+        }
         return 0;
     } 
 } 
