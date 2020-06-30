@@ -23,7 +23,7 @@ public class PageRank
         for(HashMap.Entry<String,Double> entry : ret.entrySet())
         {
             adapter.updateURL(entry.getKey(), entry.getValue());
-            //System.out.println("Page " + i++);
+            System.out.println("Page " + i++);
         }
 
         long endTime = System.nanoTime();
@@ -53,7 +53,6 @@ public class PageRank
             try {
                 url = new URL(src);
             } catch (MalformedURLException e) {
-                System.out.println(src);
                 e.printStackTrace();
             }
             String BaseURL = "";

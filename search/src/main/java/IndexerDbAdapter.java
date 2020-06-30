@@ -158,18 +158,18 @@ public class IndexerDbAdapter {
             stmt.addBatch(TABLE1_CREATE);
             stmt.addBatch(TABLE1_INDEX_CREATE);
             stmt.addBatch(TABLE2_CREATE);
-            // stmt.addBatch(TABLE2_INDEX_CREATE);
-            // stmt.addBatch(TABLE2_INDEX2_CREATE);
+            stmt.addBatch(TABLE2_INDEX_CREATE);
+            stmt.addBatch(TABLE2_INDEX2_CREATE);
             stmt.addBatch(TABLE3_LINKS_CREATE);
-            // stmt.addBatch(TABLE3_INDEX_CREATE);
+            stmt.addBatch(TABLE3_INDEX_CREATE);
             stmt.addBatch(TABLE4_IMAGES_CREATE);
             // stmt.addBatch(TABLE4_INDEX_CREATE);
-            // stmt.addBatch(TABLE4_INDEX2_CREATE);
+            stmt.addBatch(TABLE4_INDEX2_CREATE);
             stmt.addBatch(TABLE5_QUERIES_CREATE);
             stmt.addBatch(TABLE6_USER_URLS_CREATE);
             stmt.addBatch(TABLE7_CREATE);
-            // stmt.addBatch(TABLE7_INDEX_CREATE);
-            // stmt.addBatch(TABLE7_INDEX2_CREATE);
+            stmt.addBatch(TABLE7_INDEX_CREATE);
+            stmt.addBatch(TABLE7_INDEX2_CREATE);
             stmt.addBatch(TABLE8_CREATE);
             stmt.executeBatch();
         } catch (SQLException e) {
@@ -993,7 +993,9 @@ public class IndexerDbAdapter {
      * @return all links that are used in page rank
      */
     public ArrayList<Pair<String,String>> fetchAllLinks() {
-        String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL, TABLE_LINKS_NAME);
+        String sql = String.format(
+                "SELECT tb2.%s src, tb3.%s dst FROM %s tb1 JOIN tb1_urls tb2 on tb1.%s = tb2.%s JOIN %s tb3 on tb1.%s = tb3.%s",
+                COL_URL, COL_URL, TABLE_LINKS_NAME, COL_SRC_URL, COL_ID, TABLE_URLS_NAME, COL_DST_URL, COL_ID);
         ArrayList<Pair<String,String>> ret = new ArrayList<>();
         try (Statement stmt = conn.createStatement()) {
 
