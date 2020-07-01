@@ -22,9 +22,9 @@ public class TrendsServlet  extends HttpServlet {
         adapter.open();
         
         String region = request.getParameter("region");
-		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
+		PrintWriter out = response.getWriter();
 		Gson gson = new Gson();
 		
 

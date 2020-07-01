@@ -22,9 +22,9 @@ public class FetchAllSuggestionsServlet extends HttpServlet {
 		Gson gson = new Gson();
 		IndexerDbAdapter adapter = new IndexerDbAdapter();
 		adapter.open();
-		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
+		PrintWriter out = response.getWriter();
 		
 		ArrayList<String> result = adapter.fetchAllQueries();
 
