@@ -44,9 +44,9 @@ public class AddSuggestionsServlet extends HttpServlet {
 			}
 		}
 
-		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
+		PrintWriter out = response.getWriter();
 		
 		boolean result = adapter.addQuery(query);
 

@@ -20,9 +20,9 @@ public class QueryServlet extends HttpServlet {
 		String query = request.getParameter("query");
 		String image = request.getParameter("img");
 		int page = Integer.parseInt(request.getParameter("page"));
-		PrintWriter out = response.getWriter();
 		response.setContentType("application/json");
 		response.setCharacterEncoding("UTF-8");
+		PrintWriter out = response.getWriter();
 		Gson gson = new Gson();
 		boolean isImage = (image != null && image.equals("1")) ? true : false;
 

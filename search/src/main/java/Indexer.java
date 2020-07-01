@@ -32,14 +32,14 @@ public class Indexer {
                 adapter.updateURL(url, indexer.getContent(), indexer.getTitle(),
                         Ranker.CalculateDateScore(indexer.getLastModified()),
                         Ranker.CalculateGeographicLocationScore(url));
-                adapter.addWords(wordScore, url);
-                adapter.addImages(url, indexer.getImages());
+                int URLID = adapter.getURLID(url);
+                adapter.addWords(wordScore, URLID);
+                adapter.addImages(URLID, indexer.getImages());
                 for(Image img : indexer.getImages())
-                    adapter.addImageWords(img.getSrc(), img.getWords());
+                    adapter.addImageWords(adapter.getImgID(img.getSrc()), img.getWords());
                 
                 long endTime = System.currentTimeMillis();
                 System.out.println(String.format("Indexed %d page(s) in %d ms", ++cnt, endTime-startTime));
-                
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -83,7 +83,7 @@ public class Indexer {
         listOfWords = new ArrayList<ArrayList<String>>();
 
         totalNumberOfWords = 0;
-        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "a", "meta"};
+        String[] tags = { "h1", "h2", "h3", "h4", "h5", "h6", "p", "span", "li", "tr", "meta"};
         String title = doc.title();
         ArrayList<String> words = WordsExtractionProcess.SplitStrings(title);
         totalNumberOfWords += words.size();

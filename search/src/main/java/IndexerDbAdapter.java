@@ -31,12 +31,14 @@ public class IndexerDbAdapter {
     public static final String COL_WORD = "word";
     public static final String COL_STEM = "stem";
     public static final String COL_SCORE = "score";
+    public static final String COL_URL_ID = "url_id";
 
     public static final String COL_SRC_URL = "src_url";
     public static final String COL_DST_URL = "dst_url";
 
     public static final String COL_IMAGE = "image";
     public static final String COL_ALT = "alt";
+    public static final String COL_IMG_ID = "img_id";
 
     public static final String COL_QUERY = "query";
 
@@ -47,7 +49,7 @@ public class IndexerDbAdapter {
     public static final String COL_COUNT = "count";
 
     private Connection conn;
-    private static final String DATABASE_NAME = "dba_search_indexer";
+    private static final String DATABASE_NAME = "dba_search_indexer2";
     private static final String USERNAME = "root";
     private static final String PASSWORD = "";
     private static final String CONNECTION_STRING = "jdbc:mysql://localhost:3306/";
@@ -81,32 +83,32 @@ public class IndexerDbAdapter {
 
     private static final String TABLE2_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(100), %s varchar(100), %s varchar(256), %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-            TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_URL, COL_SCORE, COL_URL, TABLE_URLS_NAME, COL_URL);
+                    + " %s varchar(100), %s varchar(100), %s INTEGER, %s DOUBLE, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+            TABLE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_URL_ID, COL_SCORE, COL_URL_ID, TABLE_URLS_NAME, COL_ID);
 
     private static final String TABLE2_INDEX_CREATE = String.format(
             "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX_NAME, TABLE_WORDS_NAME, COL_WORD,
-            COL_URL);
+            COL_URL_ID);
 
     private static final String TABLE2_INDEX2_CREATE = String.format(
             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_WORDS_INDEX2_NAME, TABLE_WORDS_NAME, COL_STEM,
-            COL_URL);
+            COL_URL_ID);
 
     public static final String TABLE3_LINKS_CREATE = String.format(
             "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(256), %s varchar(256), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE,"
+                    + " %s INTEGER, %s INTEGER, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE,"
                     + " FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-            TABLE_LINKS_NAME, COL_ID, COL_SRC_URL, COL_DST_URL, COL_SRC_URL, TABLE_URLS_NAME, COL_URL, COL_DST_URL,
-            TABLE_URLS_NAME, COL_URL);
+            TABLE_LINKS_NAME, COL_ID, COL_SRC_URL, COL_DST_URL, COL_SRC_URL, TABLE_URLS_NAME, COL_ID, COL_DST_URL,
+            TABLE_URLS_NAME, COL_ID);
 
     private static final String TABLE3_INDEX_CREATE = String.format(
-            "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
+            "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_LINKS_INDEX_NAME, TABLE_LINKS_NAME,
             COL_SRC_URL, COL_DST_URL);
 
     public static final String TABLE4_IMAGES_CREATE = String.format(
                 "CREATE TABLE IF NOT EXISTS %s( %s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                        + " %s varchar(256), %s varchar(512), %s TEXT, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-                TABLE_IMAGES_NAME, COL_ID, COL_URL, COL_IMAGE, COL_ALT, COL_URL, TABLE_URLS_NAME, COL_URL);
+                        + " %s INTEGER, %s varchar(512), %s TEXT, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+                TABLE_IMAGES_NAME, COL_ID, COL_URL_ID, COL_IMAGE, COL_ALT, COL_URL_ID, TABLE_URLS_NAME, COL_ID);
     
     // private static final String TABLE4_INDEX_CREATE = String.format(
     //             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGES_INDEX_NAME, TABLE_IMAGES_NAME,
@@ -125,16 +127,16 @@ public class IndexerDbAdapter {
 
     private static final String TABLE7_CREATE = String.format(
             "CREATE TABLE if not exists %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
-                    + " %s varchar(100), %s varchar(100), %s varchar(512), FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
-            TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_IMAGE, COL_IMAGE, TABLE_IMAGES_NAME, COL_IMAGE);
+                    + " %s varchar(100), %s varchar(100), %s INTEGER, FOREIGN KEY (%s) REFERENCES %s(%s) ON DELETE CASCADE)",
+            TABLE_IMAGE_WORDS_NAME, COL_ID, COL_WORD, COL_STEM, COL_IMG_ID, COL_IMG_ID, TABLE_IMAGES_NAME, COL_ID);
 
     private static final String TABLE7_INDEX_CREATE = String.format(
             "CREATE UNIQUE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX_NAME, TABLE_IMAGE_WORDS_NAME, COL_WORD,
-            COL_IMAGE);
+            COL_IMG_ID);
 
     private static final String TABLE7_INDEX2_CREATE = String.format(
             "CREATE INDEX if not exists %s ON %s(%s, %s)", TABLE_IMAGE_WORDS_INDEX2_NAME, TABLE_IMAGE_WORDS_NAME, COL_STEM,
-            COL_IMAGE);
+            COL_IMG_ID);
 
     private static final String TABLE8_CREATE = String.format(
             "CREATE TABLE IF NOT EXISTS %s(%s INTEGER PRIMARY KEY AUTO_INCREMENT,"
@@ -219,6 +221,49 @@ public class IndexerDbAdapter {
         }
     }
 
+    /**
+     * 
+     * @param url url to get its ID
+     * @return id of the url or -1 if not found
+     */
+    public int getURLID(String url) {
+        String sql = String.format("SELECT %s FROM %s WHERE %s = ?", COL_ID, TABLE_URLS_NAME, COL_URL);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, url);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
+    /**
+     * 
+     * @param img image to get its ID
+     * @return id of the image or -1 if not found
+     */
+    public int getImgID(String img) {
+        String sql = String.format("SELECT %s FROM %s WHERE %s = ?", COL_ID, TABLE_IMAGES_NAME, COL_IMAGE);
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, img);
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return -1;
+    }
+
     public int getDocumentsNum() {
 
         try (Statement stmt = conn.createStatement();
@@ -287,15 +332,21 @@ public class IndexerDbAdapter {
      * @param url the url to be added to database
      * @return whether the url is added successfully
      */
-    public boolean addURL(String url) {
+    public int addURL(String url) {
         String sql = String.format("INSERT INTO %s(%s) VALUES(?)", TABLE_URLS_NAME, COL_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, url);
             ps.executeUpdate();
+            try (ResultSet rs = ps.getGeneratedKeys()) {
+                if (rs.next())
+                    return rs.getInt(1);
+            } catch (Exception e) {
+                return -1;
+            } 
         } catch (SQLException e) {
-            return false;
+            return -1;
         }
-        return true;
+        return -1;
     }
     
     /**
@@ -495,19 +546,20 @@ public class IndexerDbAdapter {
      * @param wordsScores hashmap of words with their scores
      * @param url         the url to add its words
      */
-    public void addWords(HashMap<String, Double> wordsScores, String url) {
-
+    public void addWords(HashMap<String, Double> wordsScores, int URLID) {
+        if (wordsScores.size() < 1)
+            return;
         String sql = String.format(
                 "INSERT IGNORE INTO %s(%s, %s, %s, %s) VALUES" + makeParentheses(wordsScores.size(), 4)
                         + "ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
-                TABLE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);
+                TABLE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL_ID, COL_SCORE, COL_SCORE, COL_SCORE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             int i = 1;
             for (Entry<String, Double> entry : wordsScores.entrySet()) {
 
                 ps.setString(i, entry.getKey());
                 ps.setString(i + 1, WordsExtractionProcess.stem(entry.getKey()));
-                ps.setString(i + 2, url);
+                ps.setInt(i + 2, URLID);
                 ps.setDouble(i + 3, entry.getValue());
                 i += 4;
             }
@@ -525,13 +577,13 @@ public class IndexerDbAdapter {
      * @param score score is sum of (term frequency of certian tag)*(tag score) of
      *              different htm tags of a word
      */
-    public void addWord(String word, String url, double score) {
+    public void addWord(String word, int URLID, double score) {
         String sql = String.format("INSERT INTO %s(%s, %s, %s, %s) VALUES(?, ?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
-                TABLE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL, COL_SCORE, COL_SCORE, COL_SCORE);
+                TABLE_WORDS_NAME, COL_WORD, COL_STEM, COL_URL_ID, COL_SCORE, COL_SCORE, COL_SCORE);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             ps.setString(1, word);
             ps.setString(2, WordsExtractionProcess.stem(word));
-            ps.setString(3, url);
+            ps.setInt(3, URLID);
             ps.setDouble(4, score);
             ps.executeUpdate();
         } catch (SQLException e) {
@@ -541,11 +593,11 @@ public class IndexerDbAdapter {
     }
 
     // return true when the link is added successfully, false otherwise
-    public boolean addLink(String srcURL, String dstURL) {
+    public boolean addLink(int srcURL, int dstURL) {
         String sql = String.format("INSERT INTO %s(%s, %s) VALUES(?, ?)", TABLE_LINKS_NAME, COL_SRC_URL, COL_DST_URL);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, srcURL);
-            ps.setString(2, dstURL);
+            ps.setInt(1, srcURL);
+            ps.setInt(2, dstURL);
             ps.executeUpdate();
         } catch (SQLException e) {
             return false;
@@ -560,10 +612,11 @@ public class IndexerDbAdapter {
      * @param url   the url to add its image
      * @return true if added sucessfully, false otherwise
      */
-    public boolean addImage(String url, String image, String alt) {
-        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)", TABLE_IMAGES_NAME, COL_URL, COL_IMAGE, COL_ALT);
+    public boolean addImage(int URLID, String image, String alt) {
+        String sql = String.format("INSERT INTO %s(%s, %s, %s) VALUES(?, ?, ?) ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
+                TABLE_IMAGES_NAME, COL_URL_ID, COL_IMAGE, COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, url);
+            ps.setInt(1, URLID);
             ps.setString(2, image);
             ps.setString(3, alt);
             ps.executeUpdate();
@@ -578,16 +631,17 @@ public class IndexerDbAdapter {
      * @param url the url to add its imags
      * @param images list of images to be added
      */
-    public void addImages(String url, ArrayList<Image> images) {
-        
+    public void addImages(int URLID, ArrayList<Image> images) {
+        if (images.size() < 1)
+            return;
         String sql = String.format(
                 "INSERT IGNORE INTO %s(%s, %s, %s) VALUES " + makeParentheses(images.size(), 3)
                         + " ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
-                TABLE_IMAGES_NAME, COL_URL, COL_IMAGE, COL_ALT, COL_ALT, COL_ALT);
+                TABLE_IMAGES_NAME, COL_URL_ID, COL_IMAGE, COL_ALT, COL_ALT, COL_ALT);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             int i = 0;
             for (Image image : images) {
-                ps.setString(i+1, url);
+                ps.setInt(i+1, URLID);
                 ps.setString(i+2, image.getSrc());
                 ps.setString(i+3, image.getAlt());
                 i += 3;
@@ -602,21 +656,21 @@ public class IndexerDbAdapter {
      * add all words of a certian image
      * 
      * @param words       array of words
-     * @param src         the image src to add its words
+     * @param src         id of the image src to add its words
      */
-    public void addImageWords(String src, ArrayList<String> words){
+    public void addImageWords(int ImgID, ArrayList<String> words){
         if (words.size() < 1)
             return;
         String sql = String.format(
                 "INSERT IGNORE INTO %s(%s, %s, %s) VALUES " + makeParentheses(words.size(), 3)
                         + " ON DUPLICATE KEY UPDATE %s = VALUES(%s)",
-                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMAGE, COL_STEM, COL_STEM);
+                TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_STEM, COL_IMG_ID, COL_STEM, COL_STEM);
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
             int i = 0;
             for (String word : words) {
                 ps.setString(i+1, word);
                 ps.setString(i+2, WordsExtractionProcess.stem(word));
-                ps.setString(i+3, src);
+                ps.setInt(i+3, ImgID);
                 i += 3;
             }
             ps.executeUpdate();
@@ -667,15 +721,16 @@ public class IndexerDbAdapter {
      * @return list of hashmaps that contain url, content and title
      */
     public ArrayList<HashMap<String, String>> queryWords(String[] words, int limit, int page) {
-        String sql = String.format("SELECT %s, %s, %s FROM %s"
+        String sql = String.format("SELECT %s, %s, %s FROM %s t1"
                 + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
-                + " as temp USING (%s) JOIN %s USING (%s) LEFT JOIN (SELECT %s, count(*) as matching_words from %s"
+                + " as temp USING (%s) JOIN %s t3 ON t1.%s = t3.%s LEFT JOIN (SELECT %s, count(*) as matching_words from %s"
                 + " where %s in (" + makePlaceholders(words.length) + ") GROUP BY %s) as temp2 USING (%s)"
                 + " WHERE %s in (" + makePlaceholders(words.length) + ") and %s < 1.7 GROUP by %s"
                 + " ORDER BY (4*sum(%s*idf) +  COALESCE(matching_words, 0) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
-                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL, COL_URL, TABLE_WORDS_NAME, COL_WORD, COL_URL, COL_URL,
-                COL_STEM, COL_SCORE, COL_URL, COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL_ID,
+                TABLE_WORDS_NAME, COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_URL_ID, TABLE_WORDS_NAME,
+                COL_WORD, COL_URL_ID, COL_URL_ID, COL_STEM, COL_SCORE, COL_URL_ID, COL_SCORE, COL_PAGE_RANK,
+                COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
 
@@ -719,13 +774,13 @@ public class IndexerDbAdapter {
      * @return list of hashmaps that contain url, content and title
      */
     public ArrayList<HashMap<String, String>> queryPhrase(String phrase, String[] words, int limit, int page) {
-        String sql = String.format("SELECT %s, %s, %s FROM %s"
+        String sql = String.format("SELECT %s, %s, %s FROM %s t1"
                 + " JOIN (SELECT %s, log((select count(*) from %s)*1.0/count(%s)) as idf FROM %s GROUP BY %s)"
-                + " as temp USING (%s) JOIN %s USING (%s) WHERE %s in (" + makePlaceholders(words.length)
+                + " as temp USING (%s) JOIN %s t3 ON t1.%s = t3.%s WHERE %s in (" + makePlaceholders(words.length)
                 + ") and %s < 1.7 and %s like ? GROUP by %s ORDER BY (3*sum(%s*idf) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL, TABLE_WORDS_NAME,
-                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL, COL_STEM, COL_SCORE, COL_CONTENT, COL_URL, COL_SCORE,
-                COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
+                COL_URL, COL_CONTENT, COL_TITLE, TABLE_WORDS_NAME, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, TABLE_WORDS_NAME,
+                COL_STEM, COL_STEM, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_STEM, COL_SCORE, COL_CONTENT, COL_URL_ID,
+                COL_SCORE, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
 
@@ -770,10 +825,11 @@ public class IndexerDbAdapter {
      * 
      */
     public ArrayList<HashMap<String, String>> queryImage(String phrase, int limit, int page) {
-        String sql = String.format("SELECT %s, %s, %s FROM %s JOIN %s USING (%s)"
-                + " where %s like ? ORDER BY ( %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_URLS_NAME, COL_URL, COL_ALT, COL_PAGE_RANK, COL_DATE_SCORE,
-                COL_GEO_SCORE);
+        String sql = String.format(
+                "SELECT %s, %s, %s FROM %s t1 JOIN %s t2 ON t1.%s = t2.%s"
+                        + " where %s like ? ORDER BY ( %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
+                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_ALT,
+                COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -814,14 +870,14 @@ public class IndexerDbAdapter {
      */
     public ArrayList<HashMap<String, String>> queryImage(String[] words, int limit, int page) {
         String sql = String.format(
-                "SELECT %s, %s, %s FROM %s JOIN %s USING(%s) JOIN %s USING (%s)"
+                "SELECT %s, %s, %s FROM %s t1 JOIN %s t2 ON t1.%s = t2.%s JOIN %s t3 ON t1.%s = t3.%s"
                         + " LEFT JOIN (SELECT %s, COUNT(*) AS matching_words FROM %s WHERE %s in ("
                         + makePlaceholders(words.length) + ")" + "GROUP BY %s) as temp USING(%s) WHERE %s in("
                         + makePlaceholders(words.length) + ") GROUP BY %s"
                         + " ORDER BY (COALESCE(matching_words, 0) + %s + 0.5*(%s + %s)) DESC LIMIT ?, ?",
-                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_IMAGE_WORDS_NAME, COL_IMAGE, TABLE_URLS_NAME, COL_URL,
-                COL_IMAGE, TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_IMAGE, COL_IMAGE, COL_STEM, COL_IMAGE, COL_PAGE_RANK,
-                COL_DATE_SCORE, COL_GEO_SCORE);
+                COL_URL, COL_IMAGE, COL_ALT, TABLE_IMAGES_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_IMG_ID,
+                TABLE_URLS_NAME, COL_URL_ID, COL_ID, COL_IMG_ID, TABLE_IMAGE_WORDS_NAME, COL_WORD, COL_IMG_ID,
+                COL_IMG_ID, COL_STEM, COL_IMG_ID, COL_PAGE_RANK, COL_DATE_SCORE, COL_GEO_SCORE);
 
         ArrayList<HashMap<String, String>> ret = new ArrayList<HashMap<String, String>>();
 
@@ -937,7 +993,9 @@ public class IndexerDbAdapter {
      * @return all links that are used in page rank
      */
     public ArrayList<Pair<String,String>> fetchAllLinks() {
-        String sql = String.format("SELECT %s, %s FROM %s", COL_SRC_URL, COL_DST_URL, TABLE_LINKS_NAME);
+        String sql = String.format(
+                "SELECT tb2.%s src, tb3.%s dst FROM %s tb1 JOIN tb1_urls tb2 on tb1.%s = tb2.%s JOIN %s tb3 on tb1.%s = tb3.%s",
+                COL_URL, COL_URL, TABLE_LINKS_NAME, COL_SRC_URL, COL_ID, TABLE_URLS_NAME, COL_DST_URL, COL_ID);
         ArrayList<Pair<String,String>> ret = new ArrayList<>();
         try (Statement stmt = conn.createStatement()) {
 
@@ -961,7 +1019,7 @@ public class IndexerDbAdapter {
     public int removeDuplicateImages() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_IMAGES_NAME, TABLE_IMAGES_NAME, COL_ID, COL_ID, COL_URL, COL_URL, COL_IMAGE, COL_IMAGE);
+                TABLE_IMAGES_NAME, TABLE_IMAGES_NAME, COL_ID, COL_ID, COL_URL_ID, COL_URL_ID, COL_IMAGE, COL_IMAGE);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
@@ -985,7 +1043,7 @@ public class IndexerDbAdapter {
     public int removeDuplicateWords() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_WORDS_NAME, TABLE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_URL, COL_URL);
+                TABLE_WORDS_NAME, TABLE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_URL_ID, COL_URL_ID);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
@@ -997,8 +1055,8 @@ public class IndexerDbAdapter {
     public int removeDuplicateImageWords() {
         String sql = String.format(
                 "DELETE c1 FROM %s c1 INNER JOIN %s c2 WHERE c1.%s > c2.%s AND c1.%s = c2.%s AND c1.%s = c2.%s;",
-                TABLE_IMAGE_WORDS_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_IMAGE,
-                COL_IMAGE);
+                TABLE_IMAGE_WORDS_NAME, TABLE_IMAGE_WORDS_NAME, COL_ID, COL_ID, COL_WORD, COL_WORD, COL_IMG_ID,
+                COL_IMG_ID);
         try (Statement stmt = conn.createStatement()) {
             return stmt.executeUpdate(sql);
         } catch (SQLException e) {
